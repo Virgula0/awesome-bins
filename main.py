@@ -71,28 +71,50 @@ if __name__ == "__main__":
         "--verbose", action=argparse.BooleanOptionalAction, default=True
     )
     parser.add_argument(
-        "--check-version-only", action=argparse.BooleanOptionalAction, default=False
+        "--check-version-only",
+        help="Check and update latest version of modules and exit",
+        action=argparse.BooleanOptionalAction,
+        default=False,
     )
     parser.add_argument(
         "--multi-thread", action=argparse.BooleanOptionalAction, default=True
     )
-    parser.add_argument("--single", type=str, default=None)
+    parser.add_argument(
+        "--single", help="Specify single module to compile", type=str, default=None
+    )
+    parser.add_argument(
+        "--list-modules",
+        help="List all available modules",
+        action="store_true",
+        default=False,
+    )
     args = parser.parse_args()
-
-    docker_client = CustomClient(verbose=args.verbose)
 
     all_modules = {
         "postgre": postgre.Postgre,
     }
+
+    if args.list_modules:
+        print("Available modules:")
+        for name in all_modules:
+            print(f"  - {name}")
+        exit(0)
+
+    docker_client = CustomClient(verbose=args.verbose)
 
     if args.single:
         if args.single not in all_modules:
             print(f"[ERROR] unknown module: {args.single}")
             print(f"available modules: {', '.join(all_modules.keys())}")
             exit(-1)
-        modules = [all_modules[args.single](verbose=args.verbose, docker_client=docker_client)]
+        modules = [
+            all_modules[args.single](verbose=args.verbose, docker_client=docker_client)
+        ]
     else:
-        modules = [cls(verbose=args.verbose, docker_client=docker_client) for cls in all_modules.values()]
+        modules = [
+            cls(verbose=args.verbose, docker_client=docker_client)
+            for cls in all_modules.values()
+        ]
 
     if args.check_version_only:
         print("Checking and updating only versions files")

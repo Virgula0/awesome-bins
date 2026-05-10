@@ -112,3 +112,8 @@ jobs:
         run: |
           make check-bins
           make check-compiled-versions
+
+      - name: Clean up artifacts
+        run: |
+          rm -rf bins-*/
+          make clean-bins
