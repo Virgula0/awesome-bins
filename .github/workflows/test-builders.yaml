@@ -26,20 +26,33 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      # 1. Setup QEMU
-      # Enables the runner to execute arm64/arm32/x86 instructions via emulation
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
-      # 2. Setup Docker Buildx
-      # Configures the modern Docker BuildKit engine for multi-platform builds
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Clean Bins
         run: make clean-bins
 
-      # 3. Setup Standard Python 3.14 environment
+      # --- OPTION 1: DYNAMIC WARMUP ---
+      # This finds every folder with a Dockerfile and pulls/pushes the cache
+      # so the python script finds the layers ready to go.
+      - name: Warmup Docker Cache (All Dockerfiles)
+        run: |
+          for f in $(find . -name "Dockerfile"); do
+            dir=$(dirname "$f")
+            # Replace slashes with dashes to create a unique cache name per folder
+            cache_name=$(echo $dir | sed 's/\//-/g' | sed 's/^\.//' | sed 's/^-//')
+            echo "Warming up cache for $dir (slug: $cache_name)"
+
+            docker buildx build "$dir" \
+              --file "$f" \
+              --cache-from=type=gha,scope=$cache_name \
+              --cache-to=type=gha,mode=max,scope=$cache_name \
+              --load
+          done
+
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
@@ -56,15 +69,18 @@ jobs:
 
       - name: Run builder
         run: python3 main.py
+        env:
+          # Important: Force compose to use the BuildKit engine
+          # which is aware of the local cache we just warmed up
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
 
-      # 5. Commit and Push Changes
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update versions and build logs [skip ci]"
           file_pattern: "**/lts_version"
 
-      # 6. Verify outputs
       - name: Debug results
         run: |
           make check-bins

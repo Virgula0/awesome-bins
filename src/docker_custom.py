@@ -1,4 +1,9 @@
-from python_on_whales import DockerClient
+from typing import Optional
+
+try:
+    from python_on_whales import DockerClient  # type: ignore[import-not-found]
+except ImportError:
+    DockerClient = None
 import os
 import tempfile
 
@@ -21,8 +26,8 @@ class CustomClient:
         service: str,
         compose_file: str,
         version: str,
-        host_uid: int = None,
-        host_gid: int = None,
+        host_uid: Optional[int] = None,
+        host_gid: Optional[int] = None,
     ) -> bool:
         host_uid = host_uid or os.getuid()
         host_gid = host_gid or os.getgid()

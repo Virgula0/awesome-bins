@@ -1,6 +1,6 @@
 from src.abstract import Module
 from src.docker_custom import CustomClient
-import requests
+import requests  # type: ignore[import-untyped]
 from pathlib import Path
 import os
 
