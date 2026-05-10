@@ -34,8 +34,8 @@ build-container:
 	docker buildx build $(CACHE_ARGS) \
 		--platform linux/amd64,linux/arm64 \
 		-t my-compiler-output:latest \
-		--output type=local,dest=./bin_outputs \
-		.
+		--output type=local,dest=$(BUILD_CONTEXT)/bin_outputs \
+		$(BUILD_CONTEXT)
 .PHONY: build-container
 
 check-compiled-versions:

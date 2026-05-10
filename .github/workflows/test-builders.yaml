@@ -15,9 +15,28 @@ permissions:
   contents: write
 
 jobs:
+  # Find all directories with a 'Dockerfile'
+  list-folders:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - uses: actions/checkout@v4
+      - id: set-matrix
+        run: |
+          # Finds directories containing 'Dockerfile', excludes hidden dirs,
+          # and formats them into a JSON array for the matrix
+          FOLDERS=$(find . -maxdepth 3 -name "Dockerfile" -printf '%h\n' | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          echo "matrix=$FOLDERS" >> $GITHUB_OUTPUT
+
   build:
+    needs: list-folders
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    strategy:
+      fail-fast: false # Keep building other folders even if one fails
+      matrix:
+        folder: ${{ fromJson(needs.list-folders.outputs.matrix) }}
 
     steps:
       - name: Checkout code
@@ -26,7 +45,6 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      # 1. Setup QEMU for multi-platform (arm64/amd64) emulation
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
@@ -36,8 +54,11 @@ jobs:
       - name: Clean Bins
         run: make clean-bins
 
-      - name: Build container
-        run: make build-container
+      - name: Build container and extract binaries
+        run: |
+          make build-container \
+            BUILD_CONTEXT=${{ matrix.folder }} \
+            CACHE_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"
 
       - name: Setup PyPy
         uses: actions/setup-python@v6
@@ -58,18 +79,10 @@ jobs:
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update versions [skip ci]"
-          file_pattern: "**/lts_version"
+          commit_message: "Update versions for ${{ matrix.folder }} [skip ci]"
+          file_pattern: "${{ matrix.folder }}/**/lts_version"
 
       - name: Debug results
         run: |
           make check-bins
           make check-compiled-versions
-
-      - name: Build docker cache
-        uses: docker/build-push-action@v5
-        with:
-          context: .
-          push: false
-          cache-from: type=gha
-          cache-to: type=gha,mode=max
