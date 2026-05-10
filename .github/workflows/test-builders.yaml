@@ -33,6 +33,11 @@ jobs:
       - name: Clean Bins
         run: make clean-bins
 
+      - name: Debug permissions
+        run: |
+          echo "Runner UID: $(id -u), GID: $(id -g)"
+          ls -la postgre/bins/
+
       # Pre-create output dirs owned by the runner but world-writable,
       # so the in-container pguser (UID 1000) can copy files into them.
       - name: Prepare output directories
@@ -66,7 +71,9 @@ jobs:
           fi
 
       - name: Run builder
-        run: python3 main.py
+        run: |
+          chmod -R 777 **/bins/
+          python3 main.py
         env:
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
