@@ -15,28 +15,9 @@ permissions:
   contents: write
 
 jobs:
-  # Find all directories with a 'Dockerfile'
-  list-folders:
-    runs-on: ubuntu-latest
-    outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
-    steps:
-      - uses: actions/checkout@v4
-      - id: set-matrix
-        run: |
-          # Finds directories containing 'Dockerfile', excludes hidden dirs,
-          # and formats them into a JSON array for the matrix
-          FOLDERS=$(find . -maxdepth 3 -name "Dockerfile" -printf '%h\n' | sort -u | jq -R -s -c 'split("\n")[:-1]')
-          echo "matrix=$FOLDERS" >> $GITHUB_OUTPUT
-
   build:
-    needs: list-folders
     runs-on: ubuntu-latest
     timeout-minutes: 360
-    strategy:
-      fail-fast: false # Keep building other folders even if one fails
-      matrix:
-        folder: ${{ fromJson(needs.list-folders.outputs.matrix) }}
 
     steps:
       - name: Checkout code
@@ -45,21 +26,21 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
+      # 1. Setup QEMU (CRITICAL)
+      # This allows your Python script to run 'docker-compose' for
+      # arm64, arm32, and x86 architectures on an amd64 runner.
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
+      # 2. Setup Docker Buildx
+      # This ensures the docker daemon uses the modern BuildKit engine
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Clean Bins
         run: make clean-bins
 
-      - name: Build container and extract binaries
-        run: |
-          make build-container \
-            BUILD_CONTEXT=${{ matrix.folder }} \
-            CACHE_ARGS="--cache-from=type=gha --cache-to=type=gha,mode=max"
-
+      # 3. Setup Python environment
       - name: Setup PyPy
         uses: actions/setup-python@v6
         with:
@@ -69,18 +50,20 @@ jobs:
 
       - name: Install Dependencies
         run: |
+          pip install python-on-whales
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           fi
 
       - name: Run builder
-        run: python3 my_script.py
+        run: python3 main.py
 
+      # 6. Commit the updated lts_version files
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update versions for ${{ matrix.folder }} [skip ci]"
-          file_pattern: "${{ matrix.folder }}/**/lts_version"
+          commit_message: "Update versions [skip ci]"
+          file_pattern: "**/lts_version"
 
       - name: Debug results
         run: |
