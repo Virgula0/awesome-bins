@@ -36,8 +36,7 @@ jobs:
       # Pre-create output dirs owned by the runner but world-writable,
       # so the in-container pguser (UID 1000) can copy files into them.
       - name: Prepare output directories
-        run: |
-          chmod -R 777 **/bins/
+        run: find . -type d -name "bins" -exec chmod -R 777 {} +
 
       - name: Warmup Docker Cache (All Dockerfiles)
         run: |
