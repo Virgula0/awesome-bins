@@ -88,8 +88,6 @@ jobs:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name != 'schedule'
-    env:
-      GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -197,21 +195,9 @@ jobs:
       - name: Determine release tag
         id: release_version
         run: |
-          TODAY=$(date +%Y.%m.%d)
-
-          # Only look at tags for today so the counter resets each day.
-          EXISTING_TAGS=$(gh release list --limit 100 --json tagName \
-            -q '.[].tagName' 2>/dev/null || true)
-
-          MAX_NUM=0
-          for tag in $EXISTING_TAGS; do
-            if [[ $tag =~ ^v${TODAY//./\\.}\.([0-9]+)$ ]]; then
-              NUM=${BASH_REMATCH[1]}
-              [ "$NUM" -gt "$MAX_NUM" ] && MAX_NUM=$NUM
-            fi
-          done
-
-          RELEASE_TAG="v${TODAY}.$((MAX_NUM + 1))"
+          DATE=$(date +%Y_%m_%d)
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-8)
+          RELEASE_TAG="${DATE}-${SHORT_SHA}"
           echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
           echo "Release tag: $RELEASE_TAG"
 
