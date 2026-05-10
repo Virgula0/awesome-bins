@@ -11,6 +11,9 @@ on:
       - ready_for_review
       - synchronize
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -23,11 +26,18 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Setup Docker Buildx
-        run: make build-container
+      # 1. Setup QEMU for multi-platform (arm64/amd64) emulation
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
 
       - name: Clean Bins
         run: make clean-bins
+
+      - name: Build container
+        run: make build-container
 
       - name: Setup PyPy
         uses: actions/setup-python@v6
@@ -54,11 +64,12 @@ jobs:
       - name: Debug results
         run: |
           make check-bins
+          make check-compiled-versions
 
       - name: Build docker cache
         uses: docker/build-push-action@v5
         with:
           context: .
-          push: false # Just building to get the binaries
+          push: false
           cache-from: type=gha
           cache-to: type=gha,mode=max

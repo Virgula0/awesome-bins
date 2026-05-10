@@ -38,6 +38,10 @@ build-container:
 		.
 .PHONY: build-container
 
+check-compiled-versions:
+	cat **/compiled_versions 2> /dev/null
+.PHONY: clean-bins
+
 clean-bins:
 	rm -rf **/bins/**/* 2> /dev/null
 .PHONY: clean-bins
