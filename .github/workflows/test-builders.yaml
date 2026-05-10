@@ -26,25 +26,24 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      # 1. Setup QEMU (CRITICAL)
-      # This allows your Python script to run 'docker-compose' for
-      # arm64, arm32, and x86 architectures on an amd64 runner.
+      # 1. Setup QEMU
+      # Enables the runner to execute arm64/arm32/x86 instructions via emulation
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
 
       # 2. Setup Docker Buildx
-      # This ensures the docker daemon uses the modern BuildKit engine
+      # Configures the modern Docker BuildKit engine for multi-platform builds
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
       - name: Clean Bins
         run: make clean-bins
 
-      # 3. Setup Python environment
-      - name: Setup PyPy
+      # 3. Setup Standard Python 3.14 environment
+      - name: Setup Python
         uses: actions/setup-python@v6
         with:
-          python-version: 'pypy3.14'
+          python-version: '3.14'
           cache: 'pip'
           cache-dependency-path: '**/requirements*.txt'
 
@@ -58,13 +57,14 @@ jobs:
       - name: Run builder
         run: python3 main.py
 
-      # 6. Commit the updated lts_version files
+      # 5. Commit and Push Changes
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
-          commit_message: "Update versions [skip ci]"
+          commit_message: "Update versions and build logs [skip ci]"
           file_pattern: "**/lts_version"
 
+      # 6. Verify outputs
       - name: Debug results
         run: |
           make check-bins
