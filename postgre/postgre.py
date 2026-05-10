@@ -20,11 +20,11 @@ class Postgre(Module):
         pass
 
     def __str__(self):
-        return self._target_name
+        return self._target_name.upper()
 
     def _logger(self, string):
         if self._verbose:
-            super().logger(string)
+            super().logger(f"{self}: {string}")
 
     def read_version_from_file(self) -> str:
         version = super().read_version_from_file(self._lts_file)

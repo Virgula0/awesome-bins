@@ -30,9 +30,9 @@ if __name__ == "__main__":
     for module in modules:
         print(f"Building {module} ...")
 
-        if not check_versions(modules=modules):
-            print(f"failed update version for {module}, exiting")
-            exit(-1)
+        if not module.update_version():
+            print(f"[ERROR] failed update version for {module}, exiting")
+            continue
 
         builds = {
             "x86_64": module.build_x86_64,

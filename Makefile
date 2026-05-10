@@ -10,5 +10,5 @@ setup-docker:
 .PHONY: setup-docker
 
 clean-bins:
-	rm **/bins/**/*
+	rm **/bins/**/* 2> /dev/null
 .PHONY: clean-bins
