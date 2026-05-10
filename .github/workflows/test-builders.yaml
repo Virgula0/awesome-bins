@@ -1,0 +1,64 @@
+name: Test Builders
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Setup Docker Buildx
+        run: make build-container
+
+      - name: Clean Bins
+        run: make clean-bins
+
+      - name: Setup PyPy
+        uses: actions/setup-python@v6
+        with:
+          python-version: 'pypy3.14.4'
+          cache: 'pip'
+          cache-dependency-path: '**/requirements*.txt'
+
+      - name: Install Dependencies
+        run: |
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: Run builder
+        run: python3 my_script.py
+
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update versions [skip ci]"
+          file_pattern: "**/lts_version"
+
+      - name: Debug results
+        run: |
+          make check-bins
+
+      - name: Build docker cache
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: false # Just building to get the binaries
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

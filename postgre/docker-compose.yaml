@@ -1,5 +1,6 @@
 services:
   pg-static-build-x86_64:
+    container_name: pg-static-build-x86_64-${PG_VERSION:-16.1} # Very important to add the version to the name for caching tricks
     build:
       context: .
       dockerfile: Dockerfile
@@ -13,6 +14,7 @@ services:
       - ./bins/x86_64:/output
 
   pg-static-build-x86:
+    container_name: pg-static-build-x86-${PG_VERSION:-16.1} # Very important to add the version to the name for caching tricks
     build:
       context: .
       dockerfile: Dockerfile.x86
@@ -26,6 +28,7 @@ services:
       - ./bins/x86:/output
 
   pg-static-build-arm64:
+    container_name: pg-static-build-arm64-${PG_VERSION:-16.1} # Very important to add the version to the name for caching tricks
     build:
       context: .
       dockerfile: Dockerfile.arm64
@@ -39,6 +42,7 @@ services:
       - ./bins/arm64:/output
 
   pg-static-build-arm32:
+    container_name: pg-static-build-arm32-${PG_VERSION:-16.1} # Very important to add the version to the name for caching tricks
     build:
       context: .
       dockerfile: Dockerfile.arm32
