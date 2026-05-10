@@ -34,19 +34,6 @@ jobs:
       - name: Clean Bins
         run: make clean-bins
 
-      - name: Warmup Docker Cache (All Dockerfiles)
-        run: |
-          for f in $(find . -name "Dockerfile"); do
-            dir=$(dirname "$f")
-            cache_name=$(echo $dir | sed 's/\//-/g' | sed 's/^\.//' | sed 's/^-//')
-            echo "Warming up cache for $dir (slug: $cache_name)"
-            docker buildx build "$dir" \
-              --file "$f" \
-              --cache-from=type=gha,scope=$cache_name \
-              --cache-to=type=gha,mode=max,scope=$cache_name \
-              --load
-          done
-
       - name: Setup Python
         uses: actions/setup-python@v6
         with:
