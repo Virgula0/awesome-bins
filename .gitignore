@@ -222,4 +222,3 @@ __marimo__/
 ## Bins
 **/bins/*/*
 !**/bins/*/.gitkeep
-**/compiled_versions

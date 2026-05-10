@@ -1,4 +1,5 @@
 name: Test Builders
+
 on:
   push:
     branches:
@@ -17,6 +18,9 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 360
+    strategy:
+      matrix:
+        module: [postgre]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -61,12 +65,42 @@ jobs:
           fi
 
       - name: Run builder
-        run: |
-          chmod -R 777 **/bins/
-          python3 main.py
+        run: python3 main.py --single ${{ matrix.module }}
         env:
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
+
+      - name: Upload bins
+        uses: actions/upload-artifact@v4
+        with:
+          name: bins-${{ matrix.module }}
+          path: ${{ matrix.module }}/bins/
+          retention-days: 1
+
+  post-build:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Download all bins
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bins-*
+          merge-multiple: false
+
+      - name: Restore bins into expected paths
+        run: |
+          for artifact_dir in bins-*/; do
+            module="${artifact_dir#bins-}"
+            module="${module%/}"
+            mkdir -p "$module/bins"
+            cp -r "$artifact_dir/." "$module/bins/"
+          done
 
       - name: Commit and Push Changes
         uses: stefanzweifel/git-auto-commit-action@v5
