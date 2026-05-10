@@ -33,16 +33,6 @@ jobs:
       - name: Clean Bins
         run: make clean-bins
 
-      - name: Debug permissions
-        run: |
-          echo "Runner UID: $(id -u), GID: $(id -g)"
-          ls -la postgre/bins/
-
-      # Pre-create output dirs owned by the runner but world-writable,
-      # so the in-container pguser (UID 1000) can copy files into them.
-      - name: Prepare output directories
-        run: find . -type d -name "bins" -exec chmod -R 777 {} +
-
       - name: Warmup Docker Cache (All Dockerfiles)
         run: |
           for f in $(find . -name "Dockerfile"); do
