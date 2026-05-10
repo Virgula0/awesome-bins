@@ -4,8 +4,23 @@ from src.abstract import Module
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-parser = argparse.ArgumentParser(description="Awesome Bins")
 
+"""
+Summary
+
+client.compose.build(services=[service])
+│
+└── docker compose build
+    ├── reads  cache_from: type=gha,scope=pg-static-build-x86_64  ← GHA cache hit/miss
+    ├── builds image layers (only what's not cached)
+    └── writes cache_to:  type=gha,mode=max,scope=pg-static-build-x86_64  ← populates cache
+
+client.compose.up(services=[service])
+│
+└── docker compose up
+    └── runs the container → compiles PostgreSQL → writes binaries to ./bins/<arch>/
+"""
+parser = argparse.ArgumentParser(description="Awesome Bins")
 
 def check_versions(modules) -> int:
     for module in modules:
