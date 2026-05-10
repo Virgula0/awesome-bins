@@ -1,0 +1,4 @@
+pg-static-build-x86_64:16.1
+pg-static-build-x86:16.1
+pg-static-build-arm64:16.1
+pg-static-build-arm32:16.1

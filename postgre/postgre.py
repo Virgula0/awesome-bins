@@ -42,7 +42,7 @@ class Postgre(Module):
 
     def read_version_from_file(self, file) -> str:
         version = super().read_version_from_file(file)
-        self._logger(f"Version read from file {version}")
+        self._logger(f"Version read from file {os.path.basename(file)}: {version}")
         return version
 
     def update_version(self):
