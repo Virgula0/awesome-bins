@@ -4,7 +4,6 @@ from src.abstract import Module
 import argparse
 from concurrent.futures import ThreadPoolExecutor, as_completed
 
-
 """
 Summary
 
@@ -21,6 +20,7 @@ client.compose.up(services=[service])
     └── runs the container → compiles PostgreSQL → writes binaries to ./bins/<arch>/
 """
 parser = argparse.ArgumentParser(description="Awesome Bins")
+
 
 def check_versions(modules) -> int:
     for module in modules:
