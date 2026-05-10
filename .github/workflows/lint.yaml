@@ -42,11 +42,10 @@ jobs:
           python -m pip install --upgrade pip
 
           if [ -f requirements.txt ]; then
-            pip install -r requirements.txt
+            make install-requirements
           fi
 
-          # install linting tools (not part of runtime deps)
-          pip install ruff black mypy
+          make install-lint
 
       # Cache ruff for faster runs
       - name: Cache Ruff

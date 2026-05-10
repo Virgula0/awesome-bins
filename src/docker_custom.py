@@ -1,9 +1,12 @@
-from typing import Optional
+from typing import Optional, TYPE_CHECKING
 
-try:
+if TYPE_CHECKING:
     from python_on_whales import DockerClient  # type: ignore[import-not-found]
-except ImportError:
-    DockerClient = None
+else:
+    try:
+        from python_on_whales import DockerClient
+    except ImportError:
+        DockerClient = None
 import os
 import tempfile
 

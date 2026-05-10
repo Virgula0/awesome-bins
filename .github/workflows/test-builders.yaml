@@ -1,5 +1,4 @@
 name: Test Builders
-
 on:
   push:
     branches:
@@ -18,7 +17,6 @@ jobs:
   build:
     runs-on: ubuntu-latest
     timeout-minutes: 360
-
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -35,17 +33,18 @@ jobs:
       - name: Clean Bins
         run: make clean-bins
 
-      # --- OPTION 1: DYNAMIC WARMUP ---
-      # This finds every folder with a Dockerfile and pulls/pushes the cache
-      # so the python script finds the layers ready to go.
+      # Pre-create output dirs owned by the runner but world-writable,
+      # so the in-container pguser (UID 1000) can copy files into them.
+      - name: Prepare output directories
+        run: |
+          chmod -R 777 bins/
+
       - name: Warmup Docker Cache (All Dockerfiles)
         run: |
           for f in $(find . -name "Dockerfile"); do
             dir=$(dirname "$f")
-            # Replace slashes with dashes to create a unique cache name per folder
             cache_name=$(echo $dir | sed 's/\//-/g' | sed 's/^\.//' | sed 's/^-//')
             echo "Warming up cache for $dir (slug: $cache_name)"
-
             docker buildx build "$dir" \
               --file "$f" \
               --cache-from=type=gha,scope=$cache_name \
@@ -70,8 +69,6 @@ jobs:
       - name: Run builder
         run: python3 main.py
         env:
-          # Important: Force compose to use the BuildKit engine
-          # which is aware of the local cache we just warmed up
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
 
