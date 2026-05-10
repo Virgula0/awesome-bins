@@ -37,7 +37,7 @@ jobs:
       # so the in-container pguser (UID 1000) can copy files into them.
       - name: Prepare output directories
         run: |
-          chmod -R 777 bins/
+          chmod -R 777 **/bins/
 
       - name: Warmup Docker Cache (All Dockerfiles)
         run: |
