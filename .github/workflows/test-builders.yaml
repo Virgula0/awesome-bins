@@ -1,0 +1,103 @@
+name: Test Builders
+
+on:
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      matrix:
+        module: [postgre]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Clean Bins
+        run: make clean-bins
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.14'
+          cache: 'pip'
+          cache-dependency-path: '**/requirements*.txt'
+
+      - name: Install Dependencies
+        run: |
+          pip install python-on-whales
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: Run builder
+        run: python3 main.py --single ${{ matrix.module }}
+        env:
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
+
+      - name: Upload bins
+        uses: actions/upload-artifact@v4
+        with:
+          name: bins-${{ matrix.module }}
+          path: ${{ matrix.module }}/bins/
+          retention-days: 1
+
+  post-build:
+    needs: build
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Download all bins
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bins-*
+          merge-multiple: false
+
+      - name: Restore bins into expected paths
+        run: |
+          for artifact_dir in bins-*/; do
+            module="${artifact_dir#bins-}"
+            module="${module%/}"
+            mkdir -p "$module/bins"
+            cp -r "$artifact_dir/." "$module/bins/"
+          done
+
+      - name: Commit and Push Changes
+        uses: stefanzweifel/git-auto-commit-action@v5
+        with:
+          commit_message: "Update versions and build logs [skip ci]"
+          file_pattern: "**/lts_version"
+
+      - name: Debug results
+        run: |
+          make check-bins
+          make check-compiled-versions
+
+      - name: Clean up artifacts
+        run: |
+          rm -rf bins-*/
+          make clean-bins

@@ -1,0 +1,267 @@
+name: Release
+
+on:
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * 0"
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 360
+    strategy:
+      matrix:
+        module: [postgre]
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Set up QEMU
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Clean Bins
+        run: make clean-bins
+
+      - name: Setup Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: '3.x'
+          cache: 'pip'
+          cache-dependency-path: '**/requirements*.txt'
+
+      - name: Install Dependencies
+        run: |
+          pip install python-on-whales
+          if [ -f requirements.txt ]; then
+            pip install -r requirements.txt
+          fi
+
+      - name: Run builder
+        run: python3 main.py --single ${{ matrix.module }}
+        env:
+          DOCKER_BUILDKIT: 1
+          COMPOSE_DOCKER_CLI_BUILD: 1
+
+      - name: Upload bins
+        uses: actions/upload-artifact@v4
+        with:
+          name: bins-${{ matrix.module }}
+          path: ${{ matrix.module }}/bins/
+          retention-days: 1
+
+      # compiled_versions is a temporary file written by the builder that lists
+      # what was actually compiled (e.g. pg-static-build-x86_64:16.1).
+      # It is uploaded here so the release and weekly-pr jobs can read it.
+      - name: Upload compiled versions
+        uses: actions/upload-artifact@v4
+        with:
+          name: compiled-versions-${{ matrix.module }}
+          path: ${{ matrix.module }}/compiled_versions
+          retention-days: 1
+
+  release:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name != 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Download all bins
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bins-*
+          path: bins
+          merge-multiple: false
+
+      - name: Download all compiled versions
+        uses: actions/download-artifact@v4
+        with:
+          pattern: compiled-versions-*
+          path: compiled-versions
+          merge-multiple: false
+
+      # Restore each module's bins back into <module>/bins/ so paths that the
+      # rest of the job expects (e.g. postgre/bins/x86_64/) are correct.
+      - name: Restore bins into expected paths
+        run: |
+          for artifact_dir in bins/bins-*/; do
+            module="${artifact_dir#bins/bins-}"
+            module="${module%/}"
+            mkdir -p "$module/bins"
+            cp -r "$artifact_dir/." "$module/bins/"
+          done
+
+      # Reads every compiled_versions file produced by the build job and outputs:
+      #   compiled_content — the raw file text used as the release body
+      #   arch_versions    — newline-separated "arch:version" pairs used to
+      #                      name the archives (e.g. "x86_64:16.1")
+      - name: Read compiled versions
+        id: compiled_info
+        run: |
+          COMPILED_CONTENT=""
+          ARCH_VERSIONS=""
+
+          for f in compiled-versions/compiled-versions-*/*; do
+            [ -f "$f" ] || continue
+
+            FILE_CONTENT=$(cat "$f")
+            COMPILED_CONTENT+="$FILE_CONTENT"$'\n'
+
+            while IFS=: read -r service version; do
+              [ -n "$service" ] && [ -n "$version" ] || continue
+              case "$service" in
+                pg-static-build-x86_64) ARCH="x86_64" ;;
+                pg-static-build-x86)    ARCH="x86"    ;;
+                pg-static-build-arm64)  ARCH="arm64"  ;;
+                pg-static-build-arm32)  ARCH="arm32"  ;;
+                *) continue ;;
+              esac
+              ARCH_VERSIONS+="${ARCH}:${version}"$'\n'
+            done < "$f"
+          done
+
+          echo "compiled_content<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMPILED_CONTENT"     >> $GITHUB_OUTPUT
+          echo "EOF"                   >> $GITHUB_OUTPUT
+
+          echo "arch_versions<<EOF"    >> $GITHUB_OUTPUT
+          echo "$ARCH_VERSIONS"        >> $GITHUB_OUTPUT
+          echo "EOF"                   >> $GITHUB_OUTPUT
+
+      # Produces one tar.gz per architecture found in compiled_versions.
+      # Example output: postgre_x86_64_16.1.tar.gz
+      # Fails early if no archives could be created (all dirs were empty).
+      - name: Create archives
+        run: |
+          CREATED=0
+
+          while IFS=: read -r arch version; do
+            [ -n "$arch" ] && [ -n "$version" ] || continue
+
+            case "$arch" in
+              x86_64) MODULE_DIR="postgre/bins/x86_64" ;;
+              x86)    MODULE_DIR="postgre/bins/x86"    ;;
+              arm64)  MODULE_DIR="postgre/bins/arm64"  ;;
+              arm32)  MODULE_DIR="postgre/bins/arm32"  ;;
+              *) echo "Unknown arch: $arch — skipping"; continue ;;
+            esac
+
+            if [ -d "$MODULE_DIR" ] && [ "$(ls -A "$MODULE_DIR")" ]; then
+              ARCHIVE_NAME="postgre_${arch}_${version}.tar.gz"
+              tar -czf "$ARCHIVE_NAME" -C "$MODULE_DIR" .
+              echo "Created $ARCHIVE_NAME"
+              CREATED=$((CREATED + 1))
+            else
+              echo "Warning: $MODULE_DIR is empty or missing — skipping"
+            fi
+          done <<< "${{ steps.compiled_info.outputs.arch_versions }}"
+
+          if [ "$CREATED" -eq 0 ]; then
+            echo "No archives were created — aborting release."
+            exit 1
+          fi
+
+      # Computes a unique, date-based tag: v<YYYY.MM.DD>.<N>
+      # N auto-increments per day so multiple releases on the same day are safe.
+      - name: Determine release tag
+        id: release_version
+        run: |
+          DATE=$(date +%Y_%m_%d)
+          SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-8)
+          RELEASE_TAG="${DATE}-${SHORT_SHA}"
+          echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
+          echo "Release tag: $RELEASE_TAG"
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          tag_name: ${{ steps.release_version.outputs.release_tag }}
+          name: Release ${{ steps.release_version.outputs.release_tag }}
+          body: ${{ steps.compiled_info.outputs.compiled_content }}
+          files: postgre_*.tar.gz
+          fail_on_unmatched_files: true
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -rf bins/ compiled-versions/
+          rm -f postgre_*.tar.gz
+
+  create-pr-weekly:
+    needs: build
+    runs-on: ubuntu-latest
+    if: github.event_name == 'schedule'
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          submodules: recursive
+
+      - name: Download all bins
+        uses: actions/download-artifact@v4
+        with:
+          pattern: bins-*
+          path: bins
+          merge-multiple: false
+
+      - name: Download all compiled versions
+        uses: actions/download-artifact@v4
+        with:
+          pattern: compiled-versions-*
+          path: compiled-versions
+          merge-multiple: false
+
+      - name: Restore bins into expected paths
+        run: |
+          for artifact_dir in bins/bins-*/; do
+            module="${artifact_dir#bins/bins-}"
+            module="${module%/}"
+            mkdir -p "$module/bins"
+            cp -r "$artifact_dir/." "$module/bins/"
+          done
+
+      - name: Get current date
+        id: date
+        run: echo "today=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
+
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v7
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "chore: weekly release artifacts and lts_version update [skip ci]"
+          branch: weekly-release-${{ steps.date.outputs.today }}
+          title: "Weekly Release ${{ steps.date.outputs.today }}"
+          body: |
+            Automated weekly release PR.
+
+            This PR was opened by the scheduled workflow and contains:
+            - Updated `lts_version` files reflecting the latest successful builds.
+
+            Please review and merge to trigger the release job.
+          # Only stage lts_version files — bins are uploaded as release assets,
+          # not committed to the repository.
+          add-paths: |
+            **/lts_version
+
+      - name: Clean up
+        if: always()
+        run: |
+          rm -rf bins/ compiled-versions/
