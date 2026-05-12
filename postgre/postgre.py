@@ -6,13 +6,13 @@ import os
 
 
 class Postgre(Module):
-    _url = "https://www.postgresql.org/versions.json"  # official JSON feed
+    _url = "https://www.postgresql.org/versions.json"
     _target_name = "postgre"
     _lts_file = os.path.join(Path(__file__).resolve().parent, "lts_version")
     _stable_file = os.path.join(
         Path(__file__).resolve().parent, "stable_working_version"
     )
-    _real_compiled_file = os.path.join(
+    _compiled_file = os.path.join(
         Path(__file__).resolve().parent, "compiled_versions"
     )
     _compose_file = os.path.join(Path(__file__).resolve().parent, "docker-compose.yaml")
@@ -20,11 +20,12 @@ class Postgre(Module):
     _verbose = False
     _docker_client = None
 
-    _current_version = "0"  # updated at runtime
+    _current_version = "0"
     _docker_env_version = "0"
     _stable_fallback_version = "0"
 
     def __init__(self, verbose, docker_client: CustomClient):
+        super().__init__(verbose=verbose)
         self._verbose = verbose
         self._docker_client = docker_client
 
@@ -36,24 +37,15 @@ class Postgre(Module):
     def __str__(self):
         return self._target_name.upper()
 
-    def _logger(self, string):
-        if self._verbose:
-            super().logger(f"{self}: {string}")
-
-    def read_version_from_file(self, file) -> str:
-        version = super().read_version_from_file(file)
-        self._logger(f"Version read from file {os.path.basename(file)}: {version}")
-        return version
-
     def update_version(self):
         try:
 
             versions = requests.get(self._url).json()
-            latest = versions[-1]  # sorted first-latest
+            latest = versions[-1]
 
             version = f"{latest['major']}.{latest['latestMinor']}"
 
-            self._logger(f"Latest version: {version}")
+            self.logger(f"Latest version: {version}")
 
             with open(self._lts_file, "w") as f:
                 f.write(f"{version}")
@@ -67,10 +59,6 @@ class Postgre(Module):
 
         return True
 
-    def _append_real_compiled(self, service, version):
-        with open(self._real_compiled_file, "a") as f:
-            f.write(f"{service}:{version}\n")
-
     def _build(self, service):
         result = self._docker_client.run(
             service=service,
@@ -79,12 +67,10 @@ class Postgre(Module):
         )
 
         if result:
-            self._append_real_compiled(service=service, version=self._current_version)
+            self.append_compiled(service=service, version=self._current_version)
             return result
 
-        # failed
-        # fallback to stable
-        self._logger(
+        self.logger(
             f"ERROR for {service}! compilation not successful for version {self._current_version} "
             f"falling back and compile {self._stable_fallback_version}"
         )
@@ -96,7 +82,7 @@ class Postgre(Module):
         )
 
         if result:
-            self._append_real_compiled(
+            self.append_compiled(
                 service=service, version=self._stable_fallback_version
             )
 

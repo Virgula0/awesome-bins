@@ -1,17 +1,32 @@
 # Defines class as an interface
 
+import os
+
 
 class Module:
+    def __init__(self, verbose=False):
+        self._verbose = verbose
+
+    def logger(self, string):
+        if self._verbose:
+            print(f"{self}: {string}")
+
     def update_version(self) -> bool:  # type: ignore[empty-body]
         """Update the package to lts"""
         pass
 
-    def read_version_from_file(self, lts_file) -> str:
+    def read_version_from_file(self, file_path) -> str:
         """Read version from the file"""
         version = ""
-        with open(lts_file, "r") as f:
-            version = f.readline()  # only first line needed
+        with open(file_path, "r") as f:
+            version = f.readline()
+        self.logger(f"Version read from file {os.path.basename(file_path)}: {version}")
         return version
+
+    def append_compiled(self, service, version):
+        """Append compiled service version to file"""
+        with open(self._compiled_file, "a") as f:
+            f.write(f"{service}:{version}\n")
 
     def build_x86_64(self) -> bool:  # type: ignore[empty-body]
         """Build x86_64 for the specified module"""
@@ -29,5 +44,4 @@ class Module:
         """Build arm32"""
         pass
 
-    def logger(self, string):
-        print(string)
+
