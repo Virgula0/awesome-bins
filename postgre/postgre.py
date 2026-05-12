@@ -12,9 +12,7 @@ class Postgre(Module):
     _stable_file = os.path.join(
         Path(__file__).resolve().parent, "stable_working_version"
     )
-    _compiled_file = os.path.join(
-        Path(__file__).resolve().parent, "compiled_versions"
-    )
+    _compiled_file = os.path.join(Path(__file__).resolve().parent, "compiled_versions")
     _compose_file = os.path.join(Path(__file__).resolve().parent, "docker-compose.yaml")
 
     _verbose = False
@@ -82,9 +80,7 @@ class Postgre(Module):
         )
 
         if result:
-            self.append_compiled(
-                service=service, version=self._stable_fallback_version
-            )
+            self.append_compiled(service=service, version=self._stable_fallback_version)
 
         return result
 

@@ -43,5 +43,3 @@ class Module:
     def build_arm32(self) -> bool:  # type: ignore[empty-body]
         """Build arm32"""
         pass
-
-
