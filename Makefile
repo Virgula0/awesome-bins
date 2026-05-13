@@ -146,8 +146,8 @@ export PYTHON_TEMPLATE
 
 create-module:
 	@if [ -z "$(NAME)" ]; then echo "Error: NAME is not set. Usage: make create-module NAME=netcat"; exit 1; fi
-	@mkdir -p $(NAME)/arm32 $(NAME)/arm64 $(NAME)/x86 $(NAME)/x86_64
-	@touch $(NAME)/arm32/.gitkeep $(NAME)/arm64/.gitkeep $(NAME)/x86/.gitkeep $(NAME)/x86_64/.gitkeep
+	@mkdir -p $(NAME)/bins/arm32 $(NAME)/bins/arm64 $(NAME)/bins/x86 $(NAME)/bins/x86_64
+	@touch $(NAME)/bins/arm32/.gitkeep $(NAME)/bins/arm64/.gitkeep $(NAME)/bins/x86/.gitkeep $(NAME)/bins/x86_64/.gitkeep
 	@touch $(NAME)/__init__.py
 	@touch $(NAME)/compiled_versions
 	@touch $(NAME)/docker-compose.yaml
@@ -159,4 +159,4 @@ create-module:
 	@touch $(NAME)/stable_working_version
 	@echo "$$PYTHON_TEMPLATE" > $(NAME)/$(NAME).py
 	@echo "Module '$(NAME)' created successfully."
-	make format
+	@make format
