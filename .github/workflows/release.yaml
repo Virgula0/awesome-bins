@@ -1,19 +1,11 @@
 name: Release
 
-# on:
-#   push:
-#     branches:
-#       - main
-#   schedule:
-#     - cron: "0 0 * * 0"
-
 on:
-  pull_request:
-    types:
-      - opened
-      - reopened
-      - ready_for_review
-      - synchronize
+  push:
+    branches:
+      - main
+  schedule:
+    - cron: "0 0 * * 0"
 
 permissions:
   contents: write
