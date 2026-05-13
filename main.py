@@ -108,7 +108,7 @@ if __name__ == "__main__":
 
     all_modules = {
         "postgre": postgre.Postgre,
-        "netcat-traditional": netcat.Netcat,
+        "netcat_traditional": netcat.Netcat,
     }
 
     if args.list_modules:
