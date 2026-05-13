@@ -1,5 +1,5 @@
 from postgre import postgre
-from netcat import netcat
+from netcat_traditional import netcat
 from src.docker_custom import CustomClient
 from src.abstract import Module
 import argparse

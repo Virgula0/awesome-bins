@@ -1,11 +1,19 @@
 name: Release
 
+# on:
+#   push:
+#     branches:
+#       - main
+#   schedule:
+#     - cron: "0 0 * * 0"
+
 on:
-  push:
-    branches:
-      - main
-  schedule:
-    - cron: "0 0 * * 0"
+  pull_request:
+    types:
+      - opened
+      - reopened
+      - ready_for_review
+      - synchronize
 
 permissions:
   contents: write
@@ -17,7 +25,7 @@ jobs:
     timeout-minutes: 360
     strategy:
       matrix:
-        module: [postgre, netcat-traditional]
+        module: [postgre, netcat_traditional]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -71,10 +79,60 @@ jobs:
           path: ${{ matrix.module }}/compiled_versions
           retention-days: 1
 
-  release:
+  check-releasable:
     needs: build
     runs-on: ubuntu-latest
     if: github.event_name != 'schedule'
+    outputs:
+      changed: ${{ steps.check_changes.outputs.changed }}
+      compiled_content: ${{ steps.compiled_info.outputs.compiled_content }}
+    steps:
+      - name: Download all compiled versions
+        uses: actions/download-artifact@v4
+        with:
+          pattern: compiled-versions-*
+          path: compiled-versions
+          merge-multiple: false
+
+      - name: Read compiled versions
+        id: compiled_info
+        run: |
+          COMPILED_CONTENT=""
+          # Find all compiled_versions files across all modules
+          for f in compiled-versions/compiled-versions-*/*; do
+            [ -f "$f" ] || continue
+            FILE_CONTENT=$(cat "$f")
+            COMPILED_CONTENT+="$FILE_CONTENT"$'\n'
+          done
+
+          echo "compiled_content<<EOF" >> $GITHUB_OUTPUT
+          echo "$COMPILED_CONTENT"     >> $GITHUB_OUTPUT
+          echo "EOF"                   >> $GITHUB_OUTPUT
+
+      - name: Check for changes against latest release
+        id: check_changes
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          NEW_CONTENT: ${{ steps.compiled_info.outputs.compiled_content }}
+        run: |
+          # Fetch the body of the latest release.
+          OLD_CONTENT=$(gh release view --json body --template '{{.body}}' 2>/dev/null || echo "none")
+
+          CLEAN_OLD=$(echo "$OLD_CONTENT" | tr -d '[:space:]')
+          CLEAN_NEW=$(echo "$NEW_CONTENT" | tr -d '[:space:]')
+
+          if [ "$CLEAN_OLD" = "$CLEAN_NEW" ]; then
+            echo "No changes in binary versions detected. Skipping release."
+            echo "changed=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changes detected."
+            echo "changed=true" >> $GITHUB_OUTPUT
+          fi
+
+  release:
+    needs: [build, check-releasable]
+    runs-on: ubuntu-latest
+    if: needs.check-releasable.outputs.changed == 'true'
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -107,70 +165,43 @@ jobs:
             cp -r "$artifact_dir/." "$module/bins/"
           done
 
-      # Reads every compiled_versions file produced by the build job and outputs:
-      #   compiled_content — the raw file text used as the release body
-      #   arch_versions    — newline-separated "arch:version" pairs used to
-      #                      name the archives (e.g. "x86_64:16.1")
-      - name: Read compiled versions
-        id: compiled_info
-        run: |
-          COMPILED_CONTENT=""
-          ARCH_VERSIONS=""
-
-          for f in compiled-versions/compiled-versions-*/*; do
-            [ -f "$f" ] || continue
-
-            FILE_CONTENT=$(cat "$f")
-            COMPILED_CONTENT+="$FILE_CONTENT"$'\n'
-
-            while IFS=: read -r service version; do
-              [ -n "$service" ] && [ -n "$version" ] || continue
-              case "$service" in
-                pg-static-build-x86_64) ARCH="x86_64" ;;
-                pg-static-build-x86)    ARCH="x86"    ;;
-                pg-static-build-arm64)  ARCH="arm64"  ;;
-                pg-static-build-arm32)  ARCH="arm32"  ;;
-                *) continue ;;
-              esac
-              ARCH_VERSIONS+="${ARCH}:${version}"$'\n'
-            done < "$f"
-          done
-
-          echo "compiled_content<<EOF" >> $GITHUB_OUTPUT
-          echo "$COMPILED_CONTENT"     >> $GITHUB_OUTPUT
-          echo "EOF"                   >> $GITHUB_OUTPUT
-
-          echo "arch_versions<<EOF"    >> $GITHUB_OUTPUT
-          echo "$ARCH_VERSIONS"        >> $GITHUB_OUTPUT
-          echo "EOF"                   >> $GITHUB_OUTPUT
-
-      # Produces one tar.gz per architecture found in compiled_versions.
-      # Example output: postgre_x86_64_16.1.tar.gz
-      # Fails early if no archives could be created (all dirs were empty).
+      # Produces one tar.gz per architecture and module found.
+      # Fails early if no archives could be created.
       - name: Create archives
         run: |
           CREATED=0
 
-          while IFS=: read -r arch version; do
-            [ -n "$arch" ] && [ -n "$version" ] || continue
+          # Iterate through every module's compiled_versions file
+          for version_file in compiled-versions/compiled-versions-*/*; do
+            [ -f "$version_file" ] || continue
 
-            case "$arch" in
-              x86_64) MODULE_DIR="postgre/bins/x86_64" ;;
-              x86)    MODULE_DIR="postgre/bins/x86"    ;;
-              arm64)  MODULE_DIR="postgre/bins/arm64"  ;;
-              arm32)  MODULE_DIR="postgre/bins/arm32"  ;;
-              *) echo "Unknown arch: $arch — skipping"; continue ;;
-            esac
+            # Extract module name from the directory name
+            PARENT_DIR=$(dirname "$version_file")
+            MODULE_NAME="${PARENT_DIR#compiled-versions/compiled-versions-}"
 
-            if [ -d "$MODULE_DIR" ] && [ "$(ls -A "$MODULE_DIR")" ]; then
-              ARCHIVE_NAME="postgre_${arch}_${version}.tar.gz"
-              tar -czf "$ARCHIVE_NAME" -C "$MODULE_DIR" .
-              echo "Created $ARCHIVE_NAME"
-              CREATED=$((CREATED + 1))
-            else
-              echo "Warning: $MODULE_DIR is empty or missing — skipping"
-            fi
-          done <<< "${{ steps.compiled_info.outputs.arch_versions }}"
+            while IFS=: read -r service version; do
+              [ -n "$service" ] && [ -n "$version" ] || continue
+
+              # Extract architecture from service name (looks for x86_64, x86, arm64, arm32)
+              ARCH=$(echo "$service" | grep -oE 'x86_64|x86|arm64|arm32' || echo "")
+
+              if [ -z "$ARCH" ]; then
+                echo "Could not determine arch for $service — skipping"
+                continue
+              fi
+
+              MODULE_DIR="$MODULE_NAME/bins/$ARCH"
+
+              if [ -d "$MODULE_DIR" ] && [ "$(ls -A "$MODULE_DIR")" ]; then
+                ARCHIVE_NAME="${MODULE_NAME}_${ARCH}_${version}.tar.gz"
+                tar -czf "$ARCHIVE_NAME" -C "$MODULE_DIR" .
+                echo "Created $ARCHIVE_NAME"
+                CREATED=$((CREATED + 1))
+              else
+                echo "Warning: $MODULE_DIR is empty or missing — skipping"
+              fi
+            done < "$version_file"
+          done
 
           if [ "$CREATED" -eq 0 ]; then
             echo "No archives were created — aborting release."
@@ -194,15 +225,9 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.release_version.outputs.release_tag }}
           name: Release ${{ steps.release_version.outputs.release_tag }}
-          body: ${{ steps.compiled_info.outputs.compiled_content }}
-          files: postgre_*.tar.gz
+          body: ${{ needs.check-releasable.outputs.compiled_content }}
+          files: "*.tar.gz"
           fail_on_unmatched_files: true
-
-      - name: Clean up
-        if: always()
-        run: |
-          rm -rf bins/ compiled-versions/
-          rm -f postgre_*.tar.gz
 
   create-pr-weekly:
     needs: build
@@ -260,8 +285,3 @@ jobs:
           # not committed to the repository.
           add-paths: |
             **/lts_version
-
-      - name: Clean up
-        if: always()
-        run: |
-          rm -rf bins/ compiled-versions/
