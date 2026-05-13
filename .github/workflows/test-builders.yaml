@@ -13,6 +13,7 @@ permissions:
 
 jobs:
   build:
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
     timeout-minutes: 360
     strategy:
@@ -62,6 +63,7 @@ jobs:
           retention-days: 1
 
   post-build:
+    if: github.event.pull_request.draft != true
     needs: build
     runs-on: ubuntu-latest
     steps:
