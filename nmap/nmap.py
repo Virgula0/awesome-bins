@@ -39,12 +39,14 @@ class Nmap(Module):
     def update_version(self):
         try:
             gh_content = r.get(self._url)
-            major = re.search(r'#define\s+NMAP_MAJOR\s+(\d+)', gh_content.text)
-            minor = re.search(r'#define\s+NMAP_MINOR\s+(\d+)', gh_content.text)
+            major = re.search(r"#define\s+NMAP_MAJOR\s+(\d+)", gh_content.text)
+            minor = re.search(r"#define\s+NMAP_MINOR\s+(\d+)", gh_content.text)
             special = re.search(r'#define\s+NMAP_SPECIAL\s+"([^"]*)"', gh_content.text)
 
             if major is None or minor is None or special is None:
-                raise ValueError(f"regex version not matched in url file {major}.{minor},{special}")
+                raise ValueError(
+                    f"regex version not matched in url file {major}.{minor},{special}"
+                )
 
             major = major.group(1)
             minor = minor.group(1)
