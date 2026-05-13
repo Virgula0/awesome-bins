@@ -1,0 +1,83 @@
+services:
+  netcat-static-build-x86_64:
+    container_name: netcat-static-build-x86_64-${NETCAT_VERSION:-0.7.1}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        NETCAT_VERSION: ${NETCAT_VERSION:-0.7.1}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=netcat-static-build-x86_64
+      cache_to:
+        - type=gha,mode=max,scope=netcat-static-build-x86_64
+    image: netcat-static-build-x86_64
+    platform: linux/amd64
+    volumes:
+      - ./bins/x86_64:/output
+    networks:
+      - netcat_default
+
+  netcat-static-build-x86:
+    container_name: netcat-static-build-x86-${NETCAT_VERSION:-0.7.1}
+    build:
+      context: .
+      dockerfile: Dockerfile.x86
+      args:
+        NETCAT_VERSION: ${NETCAT_VERSION:-0.7.1}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=netcat-static-build-x86
+      cache_to:
+        - type=gha,mode=max,scope=netcat-static-build-x86
+    image: netcat-static-build-x86
+    platform: linux/386
+    volumes:
+      - ./bins/x86:/output
+    networks:
+      - netcat_default
+
+  netcat-static-build-arm64:
+    container_name: netcat-static-build-arm64-${NETCAT_VERSION:-0.7.1}
+    build:
+      context: .
+      dockerfile: Dockerfile.arm64
+      args:
+        NETCAT_VERSION: ${NETCAT_VERSION:-0.7.1}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=netcat-static-build-arm64
+      cache_to:
+        - type=gha,mode=max,scope=netcat-static-build-arm64
+    image: netcat-static-build-arm64
+    platform: linux/arm64
+    volumes:
+      - ./bins/arm64:/output
+    networks:
+      - netcat_default
+
+  netcat-static-build-arm32:
+    container_name: netcat-static-build-arm32-${NETCAT_VERSION:-0.7.1}
+    build:
+      context: .
+      dockerfile: Dockerfile.arm32
+      args:
+        NETCAT_VERSION: ${NETCAT_VERSION:-0.7.1}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=netcat-static-build-arm32
+      cache_to:
+        - type=gha,mode=max,scope=netcat-static-build-arm32
+    image: netcat-static-build-arm32
+    platform: linux/arm/v7
+    volumes:
+      - ./bins/arm32:/output
+    networks:
+      - netcat_default
+
+networks:
+  netcat_default:

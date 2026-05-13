@@ -13,11 +13,12 @@ permissions:
 
 jobs:
   build:
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
     timeout-minutes: 360
     strategy:
       matrix:
-        module: [postgre]
+        module: [postgre, netcat_traditional]
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -62,6 +63,7 @@ jobs:
           retention-days: 1
 
   post-build:
+    if: github.event.pull_request.draft != true
     needs: build
     runs-on: ubuntu-latest
     steps:

@@ -1,4 +1,5 @@
 from postgre import postgre
+from netcat_traditional import netcat
 from src.docker_custom import CustomClient
 from src.abstract import Module
 import argparse
@@ -107,6 +108,7 @@ if __name__ == "__main__":
 
     all_modules = {
         "postgre": postgre.Postgre,
+        "netcat_traditional": netcat.Netcat,
     }
 
     if args.list_modules:
