@@ -17,7 +17,11 @@ jobs:
     timeout-minutes: 360
     strategy:
       matrix:
-        module: [postgre, netcat_traditional]
+        module:
+          - postgre
+          - netcat_traditional
+          - nmap
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -89,13 +93,17 @@ jobs:
       - name: Read compiled versions
         id: compiled_info
         run: |
-          COMPILED_CONTENT=""
+          # Use a temporary file to collect all lines then sort them
+          TEMP_FILE=$(mktemp)
+
           # Find all compiled_versions files across all modules
           for f in compiled-versions/compiled-versions-*/*; do
             [ -f "$f" ] || continue
-            FILE_CONTENT=$(cat "$f")
-            COMPILED_CONTENT+="$FILE_CONTENT"$'\n'
+            cat "$f" >> "$TEMP_FILE"
           done
+
+          # Sort and remove empty lines to ensure consistent comparison
+          COMPILED_CONTENT=$(sort -u "$TEMP_FILE" | sed '/^$/d')
 
           echo "compiled_content<<EOF" >> $GITHUB_OUTPUT
           echo "$COMPILED_CONTENT"     >> $GITHUB_OUTPUT
@@ -107,9 +115,10 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEW_CONTENT: ${{ steps.compiled_info.outputs.compiled_content }}
         run: |
-          # Fetch the body of the latest release.
-          OLD_CONTENT=$(gh release view --json body --template '{{.body}}' 2>/dev/null || echo "none")
+          # Fetch the body, sort the lines, and strip whitespace/empty lines
+          OLD_CONTENT=$(gh release view --json body --template '{{.body}}' 2>/dev/null | sort -u | sed '/^$/d' || echo "none")
 
+          # Final cleanup for comparison: remove all spaces/tabs/newlines
           CLEAN_OLD=$(echo "$OLD_CONTENT" | tr -d '[:space:]')
           CLEAN_NEW=$(echo "$NEW_CONTENT" | tr -d '[:space:]')
 
@@ -174,7 +183,7 @@ jobs:
             while IFS=: read -r service version; do
               [ -n "$service" ] && [ -n "$version" ] || continue
 
-              # Extract architecture from service name (looks for x86_64, x86, arm64, arm32)
+              # Extract architecture from service name
               ARCH=$(echo "$service" | grep -oE 'x86_64|x86|arm64|arm32' || echo "")
 
               if [ -z "$ARCH" ]; then
@@ -273,7 +282,5 @@ jobs:
             - Updated `lts_version` files reflecting the latest successful builds.
 
             Please review and merge to trigger the release job.
-          # Only stage lts_version files — bins are uploaded as release assets,
-          # not committed to the repository.
           add-paths: |
             **/lts_version

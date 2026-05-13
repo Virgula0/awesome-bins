@@ -18,7 +18,11 @@ jobs:
     timeout-minutes: 360
     strategy:
       matrix:
-        module: [postgre, netcat_traditional]
+        module:
+          - postgre
+          - netcat_traditional
+          - nmap
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
