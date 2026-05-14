@@ -14,14 +14,52 @@ permissions:
 jobs:
   build:
     if: github.event.pull_request.draft != true
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 120
     strategy:
+      fail-fast: true   # cancel all jobs if one arch fails
       matrix:
-        module:
-          - postgre
-          - netcat_traditional
-          - nmap
+        include:
+          # nmap
+          - module: nmap
+            arch: x86_64
+            runner: ubuntu-latest
+          - module: nmap
+            arch: x86
+            runner: ubuntu-latest
+          - module: nmap
+            arch: arm64
+            runner: ubuntu-24.04-arm   # native, no QEMU
+          - module: nmap
+            arch: arm32
+            runner: ubuntu-latest
+          # postgre
+          - module: postgre
+            arch: x86_64
+            runner: ubuntu-latest
+          - module: postgre
+            arch: x86
+            runner: ubuntu-latest
+          - module: postgre
+            arch: arm64
+            runner: ubuntu-24.04-arm
+          - module: postgre
+            arch: arm32
+            runner: ubuntu-latest
+          # netcat_traditional
+          - module: netcat_traditional
+            arch: x86_64
+            runner: ubuntu-latest
+          - module: netcat_traditional
+            arch: x86
+            runner: ubuntu-latest
+          - module: netcat_traditional
+            arch: arm64
+            runner: ubuntu-24.04-arm
+          - module: netcat_traditional
+            arch: arm32
+            runner: ubuntu-latest
+
+    runs-on: ${{ matrix.runner }}
 
     steps:
       - name: Checkout code
@@ -31,45 +69,53 @@ jobs:
           submodules: recursive
 
       - name: Set up QEMU
+        # arm64 runner is native — no QEMU needed there
+        # x86_64 runner handles x86 (32-bit) natively via kernel, but
+        # buildx still needs QEMU registered for linux/386 and linux/arm/v7
+        if: matrix.runner == 'ubuntu-latest'
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
 
-      - name: Clean Bins
-        run: make clean-bins
-
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v5
         with:
-          python-version: '3.14'
-          cache: 'pip'
+          python-version: '3.13'
+          cache: pip
           cache-dependency-path: '**/requirements*.txt'
 
-      - name: Install Dependencies
+      - name: Install dependencies
         run: |
-          pip install python-on-whales
+          pip install python-on-whales requests
           if [ -f requirements.txt ]; then
             pip install -r requirements.txt
           fi
 
       - name: Run builder
-        run: python3 main.py --single ${{ matrix.module }}
-        env:
-          DOCKER_BUILDKIT: 1
-          COMPOSE_DOCKER_CLI_BUILD: 1
+        run: |
+          python3 main.py \
+            --single ${{ matrix.module }} \
+            --arch ${{ matrix.arch }} \
+            --no-multi-thread
+        # No DOCKER_BUILDKIT needed (Docker 26+ default)
+        # No COMPOSE_DOCKER_CLI_BUILD needed (Compose v2 ignores it)
+        # ACTIONS_CACHE_URL + ACTIONS_RUNTIME_TOKEN auto-injected by GHA
+        # (required for type=gha cache in docker-compose files)
 
       - name: Upload bins
         uses: actions/upload-artifact@v4
         with:
-          name: bins-${{ matrix.module }}
-          path: ${{ matrix.module }}/bins/
+          # one artifact per module+arch combination
+          name: bins-${{ matrix.module }}-${{ matrix.arch }}
+          path: ${{ matrix.module }}/bins/${{ matrix.arch }}/
           retention-days: 1
 
   post-build:
     if: github.event.pull_request.draft != true
     needs: build
     runs-on: ubuntu-latest
+
     steps:
       - name: Checkout code
         uses: actions/checkout@v4
@@ -77,22 +123,31 @@ jobs:
           fetch-depth: 0
           submodules: recursive
 
-      - name: Download all bins
+      - name: Download all artifacts
         uses: actions/download-artifact@v4
         with:
           pattern: bins-*
           merge-multiple: false
+          path: artifacts/
 
       - name: Restore bins into expected paths
         run: |
-          for artifact_dir in bins-*/; do
-            module="${artifact_dir#bins-}"
-            module="${module%/}"
-            mkdir -p "$module/bins"
-            cp -r "$artifact_dir/." "$module/bins/"
+          for artifact_dir in artifacts/bins-*/; do
+            name="${artifact_dir#artifacts/bins-}"   # e.g. "nmap-x86_64/"
+            name="${name%/}"                          # e.g. "nmap-x86_64"
+
+            # split on last '-' to get module and arch
+            # handles module names with underscores (netcat_traditional)
+            arch="${name##*-}"                        # e.g. "x86_64"
+            module="${name%-${arch}}"                 # e.g. "nmap" or "netcat_traditional"
+
+            dest="${module}/bins/${arch}"
+            mkdir -p "$dest"
+            cp -r "${artifact_dir}/." "$dest/"
+            echo "Restored: ${artifact_dir} → ${dest}/"
           done
 
-      - name: Commit and Push Changes
+      - name: Commit version files
         uses: stefanzweifel/git-auto-commit-action@v5
         with:
           commit_message: "Update versions and build logs [skip ci]"
@@ -104,6 +159,4 @@ jobs:
           make check-compiled-versions
 
       - name: Clean up artifacts
-        run: |
-          rm -rf bins-*/
-          make clean-bins
+        run: rm -rf artifacts/

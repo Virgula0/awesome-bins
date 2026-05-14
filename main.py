@@ -52,17 +52,21 @@ def no_multi(module: Module) -> bool:
     return True
 
 
-def build_module(module: Module, multi_thread: bool):
-    print(f"[MAIN] Building {module} ...")
-
+def build_module(module: Module, multi_thread: bool, arch: str = None):
     if not module.update_version():
-        print(f"[ERROR] failed update version for {module}, exiting")
         return False
 
-    if not multi_thread:
-        print("[MAIN] Multi thread de-activated")
-        return no_multi(module=module)
+    # Single arch mode (used in GHA per-runner matrix)
+    if arch:
+        build_fn = {
+            "x86_64": module.build_x86_64,
+            "x86": module.build_x86,
+            "arm64": module.build_arm64,
+            "arm32": module.build_arm32,
+        }.get(arch)
+        return build_fn()
 
+    # Local dev: all arches, optionally threaded
     builds = {
         "x86_64": module.build_x86_64,
         "x86": module.build_x86,
@@ -70,16 +74,22 @@ def build_module(module: Module, multi_thread: bool):
         "arm32": module.build_arm32,
     }
 
+    if not multi_thread:
+        return all(fn() for fn in builds.values())
+
     with ThreadPoolExecutor(max_workers=len(builds)) as executor:
         futures = {executor.submit(fn): arch for arch, fn in builds.items()}
-
         for future in as_completed(futures):
-            arch = futures[future]
-            if not future.result():
-                print(f"failed {arch} build for {module}, exiting")
+            arch_name = futures[future]
+            try:
+                if not future.result():
+                    print(f"failed {arch_name} for {module}")
+                    executor.shutdown(wait=False, cancel_futures=True)
+                    return False
+            except Exception as ex:
+                print(f"exception in {arch_name}: {ex}")
+                executor.shutdown(wait=False, cancel_futures=True)
                 return False
-            print(f"{arch} build completed for {module}")
-
     return True
 
 
@@ -105,6 +115,13 @@ if __name__ == "__main__":
         action="store_true",
         default=False,
     )
+    parser.add_argument(
+        "--arch",
+        help="Build only a specific architecture",
+        choices=["x86_64", "x86", "arm64", "arm32"],
+        default=None,
+    )
+
     args = parser.parse_args()
 
     all_modules = {
