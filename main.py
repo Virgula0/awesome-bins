@@ -52,7 +52,7 @@ def no_multi(module: Module) -> bool:
     return True
 
 
-def build_module(module: Module, multi_thread: bool, arch: str = None):
+def build_module(module: Module, multi_thread: bool, arch: str | None = None):
     if not module.update_version():
         return False
 
@@ -64,6 +64,10 @@ def build_module(module: Module, multi_thread: bool, arch: str = None):
             "arm64": module.build_arm64,
             "arm32": module.build_arm32,
         }.get(arch)
+
+        if build_fn is None:
+            raise ValueError(f"Unsupported architecture: {arch}")
+
         return build_fn()
 
     # Local dev: all arches, optionally threaded
