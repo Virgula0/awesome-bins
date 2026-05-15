@@ -51,7 +51,9 @@ class CustomClient:
 
         try:
             client = DockerClient(
-                compose_files=[compose_file], compose_env_files=[env_file]
+                compose_files=[compose_file],
+                compose_env_files=[env_file],
+                client_call=["docker"],
             )
             # IMPORTANT, client.compose.build is needed
             # otherwise it does not detect different versions passed as env variables
