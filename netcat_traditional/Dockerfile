@@ -4,13 +4,18 @@ ARG NETCAT_VERSION=0.7.1
 
 RUN apk add --no-cache \
     build-base \
-    wget
+    wget \
+    automake
 
 WORKDIR /build
 
 RUN wget https://downloads.sourceforge.net/project/netcat/netcat/${NETCAT_VERSION}/netcat-${NETCAT_VERSION}.tar.gz \
     && tar xzf netcat-${NETCAT_VERSION}.tar.gz \
     && cd netcat-${NETCAT_VERSION} \
+    # config.guess bundled with netcat 0.7.1 is from 2003; replace with
+    # current versions from Alpine's automake package for broad arch support
+    && cp "$(automake --print-libdir)/config.guess" . \
+    && cp "$(automake --print-libdir)/config.sub" . \
     && ./configure \
         --prefix=/opt/netcat-static \
         CFLAGS='-O2' \
@@ -18,15 +23,12 @@ RUN wget https://downloads.sourceforge.net/project/netcat/netcat/${NETCAT_VERSIO
     && make \
     && make install \
     \
-    # Verify static linking
     && echo "=== Static binary check ===" \
     && file /opt/netcat-static/bin/netcat | grep -q "statically linked" \
-        && echo "OK (static)" \
-        || { echo "FAILED (not static) - $(file /opt/netcat-static/bin/netcat)"; exit 1; }
-
+    && echo "OK (static)" \
+    || { echo "FAILED (not static) - $(file /opt/netcat-static/bin/netcat)"; exit 1; }
 
 FROM alpine:3.19
-
 ARG HOST_UID=1000
 ARG HOST_GID=1000
 
