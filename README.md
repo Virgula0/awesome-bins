@@ -6,7 +6,7 @@ Useful static binaries for pentesting or IT stuff.
 [![GitHub Release](https://img.shields.io/github/v/release/Virgula0/awesome-bins)](https://github.com/Virgula0/awesome-bins/releases)
 
 > [!WARNING]
-> This repo is experimental. It tries to release update binaries automatically, but compilation directives change a lot between
+> This repo is experimental. It tries to release updated static binaries automatically, but compilation directives change a lot between
 > different versions. Also, the push releases are experimental, and it depends on how much time compilations need. The best way is to
 > run the script locally (see the run section), otherwise rely on GitHub releases (release section)
 
@@ -18,6 +18,7 @@ Only Linux binaries are supported at the moment, maybe in future I'll consider `
 # PRs
 
 Pull requests are welcome, but be sure to follow the same pattern as the existing modules.
+For more info refer to [PR.md](PR.md)
 
 # Releases
 
@@ -54,7 +55,7 @@ make setup-docker
 
 ```bash
 python3 main.py --help
-usage: main.py [-h] [--verbose | --no-verbose] [--check-version-only | --no-check-version-only] [--multi-thread | --no-multi-thread] [--single SINGLE] [--list-modules]
+usage: main.py [-h] [--verbose | --no-verbose] [--check-version-only | --no-check-version-only] [--multi-thread | --no-multi-thread] [--single SINGLE] [--list-modules] [--arch {x86_64,x86,arm64,arm32}]
 
 Awesome Bins
 
@@ -66,6 +67,8 @@ options:
   --multi-thread, --no-multi-thread
   --single SINGLE       Specify single module to compile
   --list-modules        List all available modules
+  --arch {x86_64,x86,arm64,arm32}
+                        Build only a specific architecture
 ```
 
 ### List modules
@@ -75,7 +78,9 @@ Each of the programs compiled here is a module. The option shows all modules.
 ```bash
 python3 main.py --list-modules
 Available modules:
-  - Postgres
+  - postgre
+  - netcat_traditional
+  - nmap
 ```
 
 ### Update latest versions
@@ -107,6 +112,14 @@ python3 main.py --single postgre
 ```
 
 Only `postgre` binaries will be compiled; you can see them at the end with `make check-bins`.
+
+## Compile single architecture for a single module
+
+Example for `arm64`
+
+```bash
+python3 main.py --single netcat_traditional --arch arm64
+```
 
 ## Compile all modules (single-thread)
 
