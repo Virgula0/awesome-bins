@@ -21,7 +21,7 @@ services:
     container_name: pg-static-build-x86-${PG_VERSION:-16.1}
     build:
       context: .
-      dockerfile: Dockerfile.x86
+      dockerfile: Dockerfile
       args:
         PG_VERSION: ${PG_VERSION:-16.1}
         HOST_UID: ${HOST_UID:-1000}
@@ -39,7 +39,7 @@ services:
     container_name: pg-static-build-arm64-${PG_VERSION:-16.1}
     build:
       context: .
-      dockerfile: Dockerfile.arm64
+      dockerfile: Dockerfile
       args:
         PG_VERSION: ${PG_VERSION:-16.1}
         HOST_UID: ${HOST_UID:-1000}
@@ -57,7 +57,7 @@ services:
     container_name: pg-static-build-arm32-${PG_VERSION:-16.1}
     build:
       context: .
-      dockerfile: Dockerfile.arm32
+      dockerfile: Dockerfile
       args:
         PG_VERSION: ${PG_VERSION:-16.1}
         HOST_UID: ${HOST_UID:-1000}

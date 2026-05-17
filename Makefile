@@ -152,9 +152,6 @@ create-module:
 	@touch $(NAME)/compiled_versions
 	@touch $(NAME)/docker-compose.yaml
 	@touch $(NAME)/Dockerfile
-	@touch $(NAME)/Dockerfile.arm32
-	@touch $(NAME)/Dockerfile.arm64
-	@touch $(NAME)/Dockerfile.x86
 	@touch $(NAME)/lts_version
 	@touch $(NAME)/stable_working_version
 	@echo "$$PYTHON_TEMPLATE" > $(NAME)/$(NAME).py

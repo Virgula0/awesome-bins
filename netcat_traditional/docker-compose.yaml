@@ -23,7 +23,7 @@ services:
     container_name: netcat-static-build-x86-${NETCAT_VERSION:-0.7.1}
     build:
       context: .
-      dockerfile: Dockerfile.x86
+      dockerfile: Dockerfile
       args:
         NETCAT_VERSION: ${NETCAT_VERSION:-0.7.1}
         HOST_UID: ${HOST_UID:-1000}
@@ -43,7 +43,7 @@ services:
     container_name: netcat-static-build-arm64-${NETCAT_VERSION:-0.7.1}
     build:
       context: .
-      dockerfile: Dockerfile.arm64
+      dockerfile: Dockerfile
       args:
         NETCAT_VERSION: ${NETCAT_VERSION:-0.7.1}
         HOST_UID: ${HOST_UID:-1000}
@@ -63,7 +63,7 @@ services:
     container_name: netcat-static-build-arm32-${NETCAT_VERSION:-0.7.1}
     build:
       context: .
-      dockerfile: Dockerfile.arm32
+      dockerfile: Dockerfile
       args:
         NETCAT_VERSION: ${NETCAT_VERSION:-0.7.1}
         HOST_UID: ${HOST_UID:-1000}

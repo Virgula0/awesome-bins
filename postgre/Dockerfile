@@ -37,8 +37,8 @@ RUN wget https://ftp.postgresql.org/pub/source/v${PG_VERSION}/postgresql-${PG_VE
     && make -C src/bin/pg_dump \
     \
     # Install binaries
-    && install -D -m 755 src/bin/psql/psql /opt/pg-static/bin/psql \
-    && install -D -m 755 src/bin/pg_dump/pg_dump /opt/pg-static/bin/pg_dump \
+    && install -D -m 755 src/bin/psql/psql         /opt/pg-static/bin/psql \
+    && install -D -m 755 src/bin/pg_dump/pg_dump    /opt/pg-static/bin/pg_dump \
     && install -D -m 755 src/bin/pg_dump/pg_dumpall /opt/pg-static/bin/pg_dumpall \
     \
     # Verify static linking
@@ -46,13 +46,11 @@ RUN wget https://ftp.postgresql.org/pub/source/v${PG_VERSION}/postgresql-${PG_VE
     && for bin in psql pg_dump pg_dumpall; do \
         printf "%s: " "$bin"; \
         file "/opt/pg-static/bin/$bin" | grep -q "statically linked" \
-            && echo "OK (static)" \
-            || { echo "FAILED (not static) - $(file /opt/pg-static/bin/$bin)"; exit 1; }; \
+        && echo "OK (static)" \
+        || { echo "FAILED (not static) - $(file /opt/pg-static/bin/$bin)"; exit 1; }; \
     done
 
-
 FROM alpine:3.19
-
 ARG HOST_UID=1000
 ARG HOST_GID=1000
 
@@ -60,9 +58,7 @@ RUN addgroup -g "$HOST_GID" pguser 2>/dev/null || true \
     && adduser -D -u "$HOST_UID" -G pguser pguser 2>/dev/null || true
 
 COPY --from=builder /opt/pg-static/bin/ /pg-bins/
-
 RUN chmod -R 755 /pg-bins/
 
 USER pguser
-
 CMD ["sh", "-c", "mkdir -p /output && cp -r /pg-bins/. /output/ && chmod -R 755 /output"]
