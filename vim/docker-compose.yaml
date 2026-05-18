@@ -1,0 +1,83 @@
+services:
+  vim-static-build-x86_64:
+    container_name: vim-static-build-x86_64-${VIM_VERSION:-9.2.0000}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VIM_VERSION: ${VIM_VERSION:-9.2.0000}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=vim-static-build-x86_64
+      cache_to:
+        - type=gha,mode=max,scope=vim-static-build-x86_64
+    image: vim-static-build-x86_64
+    platform: linux/amd64
+    volumes:
+      - ./bins/x86_64:/output
+    networks:
+      - vim_default
+
+  vim-static-build-x86:
+    container_name: vim-static-build-x86-${VIM_VERSION:-9.2.0000}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VIM_VERSION: ${VIM_VERSION:-9.2.0000}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=vim-static-build-x86
+      cache_to:
+        - type=gha,mode=max,scope=vim-static-build-x86
+    image: vim-static-build-x86
+    platform: linux/386
+    volumes:
+      - ./bins/x86:/output
+    networks:
+      - vim_default
+
+  vim-static-build-arm64:
+    container_name: vim-static-build-arm64-${VIM_VERSION:-9.2.0000}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VIM_VERSION: ${VIM_VERSION:-9.2.0000}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=vim-static-build-arm64
+      cache_to:
+        - type=gha,mode=max,scope=vim-static-build-arm64
+    image: vim-static-build-arm64
+    platform: linux/arm64
+    volumes:
+      - ./bins/arm64:/output
+    networks:
+      - vim_default
+
+  vim-static-build-arm32:
+    container_name: vim-static-build-arm32-${VIM_VERSION:-9.2.0000}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        VIM_VERSION: ${VIM_VERSION:-9.2.0000}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=vim-static-build-arm32
+      cache_to:
+        - type=gha,mode=max,scope=vim-static-build-arm32
+    image: vim-static-build-arm32
+    platform: linux/arm/v7
+    volumes:
+      - ./bins/arm32:/output
+    networks:
+      - vim_default
+
+networks:
+  vim_default:
