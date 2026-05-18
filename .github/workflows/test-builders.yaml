@@ -22,6 +22,7 @@ jobs:
           - postgre
           - netcat_traditional
           - nmap
+          - vim
 
     steps:
       - name: Checkout code

@@ -47,7 +47,6 @@ sudo apt install docker-buildx
 Once installed, run the cross-platform container (only once required)
 
 ```bash
-cd postgre # setup in postgre for example
 make setup-docker
 ```
 

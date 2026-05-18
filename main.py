@@ -164,5 +164,5 @@ if __name__ == "__main__":
         exit(status)
 
     for module in modules:
-        if not build_module(module, args.multi_thread):
+        if not build_module(module, args.multi_thread, args.arch):
             exit(-1)
