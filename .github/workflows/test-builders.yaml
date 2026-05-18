@@ -60,9 +60,3 @@ jobs:
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
 
-      - name: Upload bins
-        uses: actions/upload-artifact@v4
-        with:
-          name: bins-${{ matrix.module }}
-          path: ${{ matrix.module }}/bins/
-          retention-days: 1
