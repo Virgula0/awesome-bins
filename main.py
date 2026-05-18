@@ -1,4 +1,5 @@
 from postgre import postgre
+from vim import vim
 from netcat_traditional import netcat
 from nmap import nmap
 from src.docker_custom import CustomClient
@@ -132,6 +133,7 @@ if __name__ == "__main__":
         "postgre": postgre.Postgre,
         "netcat_traditional": netcat.Netcat,
         "nmap": nmap.Nmap,
+        "vim": vim.Vim,
     }
 
     if args.list_modules:
