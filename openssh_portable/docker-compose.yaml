@@ -1,0 +1,83 @@
+services:
+  openssh-portable-static-build-x86_64:
+    container_name: openssh-portable-static-build-x86_64-${OPENSSH_VERSION:-10.3p1}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        OPENSSH_VERSION: ${OPENSSH_VERSION:-10.3p1}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=openssh-portable-static-build-x86_64
+      cache_to:
+        - type=gha,mode=max,scope=openssh-portable-static-build-x86_64
+    image: openssh-portable-static-build-x86_64
+    platform: linux/amd64
+    volumes:
+      - ./bins/x86_64:/output
+    networks:
+      - openssh-portable_default
+
+  openssh-portable-static-build-x86:
+    container_name: openssh-portable-static-build-x86-${OPENSSH_VERSION:-10.3p1}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        OPENSSH_VERSION: ${OPENSSH_VERSION:-10.3p1}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=openssh-portable-static-build-x86
+      cache_to:
+        - type=gha,mode=max,scope=openssh-portable-static-build-x86
+    image: openssh-portable-static-build-x86
+    platform: linux/386
+    volumes:
+      - ./bins/x86:/output
+    networks:
+      - openssh-portable_default
+
+  openssh-portable-static-build-arm64:
+    container_name: openssh-portable-static-build-arm64-${OPENSSH_VERSION:-10.3p1}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        OPENSSH_VERSION: ${OPENSSH_VERSION:-10.3p1}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=openssh-portable-static-build-arm64
+      cache_to:
+        - type=gha,mode=max,scope=openssh-portable-static-build-arm64
+    image: openssh-portable-static-build-arm64
+    platform: linux/arm64
+    volumes:
+      - ./bins/arm64:/output
+    networks:
+      - openssh-portable_default
+
+  openssh-portable-static-build-arm32:
+    container_name: openssh-portable-static-build-arm32-${OPENSSH_VERSION:-10.3p1}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        OPENSSH_VERSION: ${OPENSSH_VERSION:-10.3p1}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=openssh-portable-static-build-arm32
+      cache_to:
+        - type=gha,mode=max,scope=openssh-portable-static-build-arm32
+    image: openssh-portable-static-build-arm32
+    platform: linux/arm/v7
+    volumes:
+      - ./bins/arm32:/output
+    networks:
+      - openssh-portable_default
+
+networks:
+  openssh-portable_default:
