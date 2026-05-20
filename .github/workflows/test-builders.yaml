@@ -23,6 +23,7 @@ jobs:
           - netcat_traditional
           - nmap
           - vim
+          - tcpdump
 
     steps:
       - name: Checkout code
