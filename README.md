@@ -15,6 +15,14 @@ Useful static binaries for pentesting or IT stuff.
 
 Only Linux binaries are supported at the moment, maybe in future I'll consider `Windows` and `MacOS` too.
 
+# List of compiled binaries (each one including all archs)
+
+- [NMAP and all suite](./nmap)
+- [TCPDUMP](./tcpdump)
+- [PSQL, PG_DUMP, PG_DUMPALL](./postgre)
+- [NETCAT_TRADITIONAL](./netcat_traditional)
+- [VIM](./vim)
+
 # PRs
 
 Pull requests are welcome, but be sure to follow the same pattern as the existing modules.
@@ -80,6 +88,8 @@ Available modules:
   - postgre
   - netcat_traditional
   - nmap
+  - vim
+  - tcpdump
 ```
 
 ### Update latest versions
