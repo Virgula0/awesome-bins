@@ -98,7 +98,7 @@ Available modules:
   - nmap
   - vim
   - tcpdump
-  - openssh
+  - openssh_portable
 ```
 
 ### Update latest versions

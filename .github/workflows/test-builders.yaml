@@ -25,7 +25,7 @@ jobs:
           - nmap
           - vim
           - tcpdump
-          - openssh
+          - openssh_portable
         arch:
           - x86_64
           - x86

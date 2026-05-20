@@ -137,7 +137,7 @@ if __name__ == "__main__":
         "nmap": nmap.Nmap,
         "vim": vim.Vim,
         "tcpdump": tcpdump.Tcpdump,
-        "openssh": openssh_portable.Openssh_portable,
+        "openssh_portable": openssh_portable.Openssh_portable,
     }
 
     if args.list_modules:

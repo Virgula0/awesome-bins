@@ -24,7 +24,7 @@ jobs:
           - nmap
           - vim
           - tcpdump
-          - openssh
+          - openssh_portable
         arch:
           - x86_64
           - x86
@@ -219,6 +219,15 @@ jobs:
           body: ${{ needs.check-releasable.outputs.compiled_content }}
           files: "*.tar.gz"
           fail_on_unmatched_files: true
+
+      - name: Delete artifacts after release
+        if: always()
+        uses: geekyeggo/delete-artifact@v5
+        with:
+          name: |
+            bins-*
+            compiled-versions-*
+          failOnError: false
 
   create-pr-weekly:
     needs: build
