@@ -1,4 +1,4 @@
-name: Release
+# .github/workflows/release.yml
 
 on:
   push:
@@ -13,16 +13,21 @@ permissions:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
+    runs-on: ${{ (matrix.arch == 'arm64' || matrix.arch == 'arm32') && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    timeout-minutes: 120
     strategy:
+      fail-fast: false
       matrix:
         module:
           - postgre
           - netcat_traditional
           - nmap
           - vim
-          - tcpdump
+        arch:
+          - x86_64
+          - x86
+          - arm64
+          - arm32
 
     steps:
       - name: Checkout code
@@ -32,6 +37,8 @@ jobs:
           submodules: recursive
 
       - name: Set up QEMU
+        # x86_64 runner needs QEMU for arm arches, and vice-versa.
+        # arm64 native runner still needs QEMU for x86/x86_64/arm32.
         uses: docker/setup-qemu-action@v3
 
       - name: Set up Docker Buildx
@@ -55,25 +62,23 @@ jobs:
           fi
 
       - name: Run builder
-        run: python3 main.py --single ${{ matrix.module }}
+        run: python3 main.py --single ${{ matrix.module }} --arch ${{ matrix.arch }}
         env:
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
 
+      # Artifact name now includes arch to avoid collisions
       - name: Upload bins
         uses: actions/upload-artifact@v4
         with:
-          name: bins-${{ matrix.module }}
-          path: ${{ matrix.module }}/bins/
+          name: bins-${{ matrix.module }}-${{ matrix.arch }}
+          path: ${{ matrix.module }}/bins/${{ matrix.arch }}/
           retention-days: 1
 
-      # compiled_versions is a temporary file written by the builder that lists
-      # what was actually compiled (e.g. pg-static-build-x86_64:16.1).
-      # It is uploaded here so the release and weekly-pr jobs can read it.
       - name: Upload compiled versions
         uses: actions/upload-artifact@v4
         with:
-          name: compiled-versions-${{ matrix.module }}
+          name: compiled-versions-${{ matrix.module }}-${{ matrix.arch }}
           path: ${{ matrix.module }}/compiled_versions
           retention-days: 1
 
@@ -95,18 +100,12 @@ jobs:
       - name: Read compiled versions
         id: compiled_info
         run: |
-          # Use a temporary file to collect all lines then sort them
           TEMP_FILE=$(mktemp)
-
-          # Find all compiled_versions files across all modules
           for f in compiled-versions/compiled-versions-*/*; do
             [ -f "$f" ] || continue
             cat "$f" >> "$TEMP_FILE"
           done
-
-          # Sort and remove empty lines to ensure consistent comparison
           COMPILED_CONTENT=$(sort -u "$TEMP_FILE" | sed '/^$/d')
-
           echo "compiled_content<<EOF" >> $GITHUB_OUTPUT
           echo "$COMPILED_CONTENT"     >> $GITHUB_OUTPUT
           echo "EOF"                   >> $GITHUB_OUTPUT
@@ -117,15 +116,11 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
           NEW_CONTENT: ${{ steps.compiled_info.outputs.compiled_content }}
         run: |
-          # Fetch the body, sort the lines, and strip whitespace/empty lines
           OLD_CONTENT=$(gh release view --json body --template '{{.body}}' 2>/dev/null | sort -u | sed '/^$/d' || echo "none")
-
-          # Final cleanup for comparison: remove all spaces/tabs/newlines
           CLEAN_OLD=$(echo "$OLD_CONTENT" | tr -d '[:space:]')
           CLEAN_NEW=$(echo "$NEW_CONTENT" | tr -d '[:space:]')
-
           if [ "$CLEAN_OLD" = "$CLEAN_NEW" ]; then
-            echo "No changes in binary versions detected. Skipping release."
+            echo "No changes detected. Skipping release."
             echo "changed=false" >> $GITHUB_OUTPUT
           else
             echo "Changes detected."
@@ -157,46 +152,40 @@ jobs:
           path: compiled-versions
           merge-multiple: false
 
-      # Restore each module's bins back into <module>/bins/ so paths that the
-      # rest of the job expects (e.g. postgre/bins/x86_64/) are correct.
+      # Restore bins — artifact dirs are now bins-<module>-<arch>/
       - name: Restore bins into expected paths
         run: |
           for artifact_dir in bins/bins-*/; do
-            module="${artifact_dir#bins/bins-}"
-            module="${module%/}"
-            mkdir -p "$module/bins"
-            cp -r "$artifact_dir/." "$module/bins/"
+            # Strip leading "bins/" and trailing "/"
+            artifact_name="${artifact_dir#bins/bins-}"
+            artifact_name="${artifact_name%/}"
+
+            # Split on last "-" to get module and arch
+            # e.g. "nmap-x86_64" → module=nmap, arch=x86_64
+            # e.g. "netcat_traditional-arm64" → needs careful splitting
+            arch="${artifact_name##*-}"
+            module="${artifact_name%-*}"
+
+            mkdir -p "$module/bins/$arch"
+            cp -r "$artifact_dir/." "$module/bins/$arch/"
           done
 
-      # Produces one tar.gz per architecture and module found.
-      # Fails early if no archives could be created.
       - name: Create archives
         run: |
           CREATED=0
-
-          # Iterate through every module's compiled_versions file
           for version_file in compiled-versions/compiled-versions-*/*; do
             [ -f "$version_file" ] || continue
 
-            # Extract module name from the directory name
             PARENT_DIR=$(dirname "$version_file")
-            MODULE_NAME="${PARENT_DIR#compiled-versions/compiled-versions-}"
+            ARTIFACT_NAME="${PARENT_DIR#compiled-versions/compiled-versions-}"
+            arch="${ARTIFACT_NAME##*-}"
+            MODULE_NAME="${ARTIFACT_NAME%-*}"
 
             while IFS=: read -r service version; do
               [ -n "$service" ] && [ -n "$version" ] || continue
-
-              # Extract architecture from service name
-              ARCH=$(echo "$service" | grep -oE 'x86_64|x86|arm64|arm32' || echo "")
-
-              if [ -z "$ARCH" ]; then
-                echo "Could not determine arch for $service — skipping"
-                continue
-              fi
-
-              MODULE_DIR="$MODULE_NAME/bins/$ARCH"
-
+              MODULE_DIR="$MODULE_NAME/bins/$arch"
               if [ -d "$MODULE_DIR" ] && [ "$(ls -A "$MODULE_DIR")" ]; then
-                ARCHIVE_NAME="${MODULE_NAME}_${ARCH}_${version}.tar.gz"
+                ARCHIVE_NAME="${MODULE_NAME}_${arch}_${version}.tar.gz"
                 tar -czf "$ARCHIVE_NAME" -C "$MODULE_DIR" .
                 echo "Created $ARCHIVE_NAME"
                 CREATED=$((CREATED + 1))
@@ -211,8 +200,6 @@ jobs:
             exit 1
           fi
 
-      # Computes a unique, date-based tag: v<YYYY.MM.DD>.<N>
-      # N auto-increments per day so multiple releases on the same day are safe.
       - name: Determine release tag
         id: release_version
         run: |
@@ -220,7 +207,6 @@ jobs:
           SHORT_SHA=$(echo "${{ github.sha }}" | cut -c1-8)
           RELEASE_TAG="${DATE}-${SHORT_SHA}"
           echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
-          echo "Release tag: $RELEASE_TAG"
 
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v2
@@ -250,20 +236,15 @@ jobs:
           path: bins
           merge-multiple: false
 
-      - name: Download all compiled versions
-        uses: actions/download-artifact@v4
-        with:
-          pattern: compiled-versions-*
-          path: compiled-versions
-          merge-multiple: false
-
       - name: Restore bins into expected paths
         run: |
           for artifact_dir in bins/bins-*/; do
-            module="${artifact_dir#bins/bins-}"
-            module="${module%/}"
-            mkdir -p "$module/bins"
-            cp -r "$artifact_dir/." "$module/bins/"
+            artifact_name="${artifact_dir#bins/bins-}"
+            artifact_name="${artifact_name%/}"
+            arch="${artifact_name##*-}"
+            module="${artifact_name%-*}"
+            mkdir -p "$module/bins/$arch"
+            cp -r "$artifact_dir/." "$module/bins/$arch/"
           done
 
       - name: Get current date
@@ -279,10 +260,6 @@ jobs:
           title: "Weekly Release ${{ steps.date.outputs.today }}"
           body: |
             Automated weekly release PR.
-
-            This PR was opened by the scheduled workflow and contains:
-            - Updated `lts_version` files reflecting the latest successful builds.
-
-            Please review and merge to trigger the release job.
+            Contains updated `lts_version` files from latest successful builds.
           add-paths: |
             **/lts_version
