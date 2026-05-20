@@ -1,6 +1,6 @@
 # awesome-bins
 
-Useful static binaries for pentesting or IT stuff.
+Useful static binaries for pentesting or IT stuff updated weekly
 
 [![Release Action](https://github.com/Virgula0/awesome-bins/actions/workflows/release.yaml/badge.svg)](https://github.com/Virgula0/awesome-bins/actions/workflows/release.yaml)
 [![GitHub Release](https://img.shields.io/github/v/release/Virgula0/awesome-bins)](https://github.com/Virgula0/awesome-bins/releases)
@@ -10,18 +10,18 @@ Useful static binaries for pentesting or IT stuff.
 > different versions. Also, the push releases are experimental, and it depends on how much time compilations need. The best way is to
 > run the script locally (see the run section), otherwise rely on GitHub releases (release section)
 
-
 # Supported OS
 
 Only Linux binaries are supported at the moment, maybe in future I'll consider `Windows` and `MacOS` too.
 
-# List of compiled binaries (each one including all archs)
+# List of compiled projects (each one including all archs)
 
 - [NMAP and all suite](./nmap)
 - [TCPDUMP](./tcpdump)
 - [PSQL, PG_DUMP, PG_DUMPALL](./postgre)
 - [NETCAT_TRADITIONAL](./netcat_traditional)
 - [VIM](./vim)
+- [OPENSSH suite](./openssh_portable)
 
 # PRs
 
@@ -49,10 +49,18 @@ Install via `apt` or whatever package manager is available.
 
 ```bash
 sudo apt update
-sudo apt install docker-buildx
+sudo apt install docker-buildx -y
 ```
 
-Once installed, run the cross-platform container (only once required)
+```bash
+sudo pacman -Syu docker-buildx
+```
+
+```bash
+dnf install docker-buildx
+```
+
+Once installed, run the cross-platform container (only once required unless you reboot the host)
 
 ```bash
 make setup-docker
@@ -90,6 +98,7 @@ Available modules:
   - nmap
   - vim
   - tcpdump
+  - openssh
 ```
 
 ### Update latest versions

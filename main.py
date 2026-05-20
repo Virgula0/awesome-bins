@@ -3,6 +3,7 @@ from tcpdump import tcpdump
 from vim import vim
 from netcat_traditional import netcat
 from nmap import nmap
+from openssh_portable import openssh_portable
 from src.docker_custom import CustomClient
 from src.abstract import Module
 import argparse
@@ -136,6 +137,7 @@ if __name__ == "__main__":
         "nmap": nmap.Nmap,
         "vim": vim.Vim,
         "tcpdump": tcpdump.Tcpdump,
+        "openssh": openssh_portable.Openssh_portable,
     }
 
     if args.list_modules:
