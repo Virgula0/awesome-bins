@@ -1,4 +1,5 @@
 from postgre import postgre
+from tcpdump import tcpdump
 from vim import vim
 from netcat_traditional import netcat
 from nmap import nmap
@@ -134,6 +135,7 @@ if __name__ == "__main__":
         "netcat_traditional": netcat.Netcat,
         "nmap": nmap.Nmap,
         "vim": vim.Vim,
+        "tcpdump": tcpdump.Tcpdump,
     }
 
     if args.list_modules:

@@ -14,15 +14,22 @@ permissions:
 jobs:
   build:
     if: github.event.pull_request.draft != true
-    runs-on: ubuntu-latest
-    timeout-minutes: 360
+    runs-on: ${{ (matrix.arch == 'arm64' || matrix.arch == 'arm32') && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
+    timeout-minutes: 120
     strategy:
+      fail-fast: true
       matrix:
         module:
           - postgre
           - netcat_traditional
           - nmap
           - vim
+          - tcpdump
+        arch:
+          - x86_64
+          - x86
+          - arm64
+          - arm32
 
     steps:
       - name: Checkout code
@@ -55,8 +62,7 @@ jobs:
           fi
 
       - name: Run builder
-        run: python3 main.py --single ${{ matrix.module }}
+        run: python3 main.py --single ${{ matrix.module }} --arch ${{ matrix.arch }}
         env:
           DOCKER_BUILDKIT: 1
           COMPOSE_DOCKER_CLI_BUILD: 1
-

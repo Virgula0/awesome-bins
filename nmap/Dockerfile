@@ -10,7 +10,7 @@ RUN apk add --no-cache \
 
 WORKDIR /build
 
-RUN git clone https://github.com/nmap/nmap.git \
+RUN git clone --depth=1 https://github.com/nmap/nmap.git \
     && cd nmap \
     && ./configure \
         --prefix=/opt/NMAP-static \
