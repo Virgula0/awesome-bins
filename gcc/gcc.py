@@ -5,6 +5,7 @@ import os
 import requests as r
 import re
 
+
 class Gcc(Module):
     _url = "https://api.github.com/repos/gcc-mirror/gcc/branches?per_page=1000"
     _target_name = "gcc"
