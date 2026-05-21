@@ -1,0 +1,88 @@
+services:
+  gcc-static-build-x86_64:
+    container_name: gcc-static-build-x86_64-${GCC_VERSION:-16}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GCC_VERSION: ${GCC_VERSION:-16}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+        TARGETARCH: amd64
+      cache_from:
+        - type=gha,scope=gcc-static-build-x86_64
+      cache_to:
+        - type=gha,mode=max,scope=gcc-static-build-x86_64
+    image: gcc-static-build-x86_64
+    platform: linux/amd64
+    volumes:
+      - ./bins/x86_64:/output
+    networks:
+      - gcc_default
+
+  gcc-static-build-x86:
+    container_name: gcc-static-build-x86-${GCC_VERSION:-16}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GCC_VERSION: ${GCC_VERSION:-16}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+        TARGETARCH: 386
+      cache_from:
+        - type=gha,scope=gcc-static-build-x86
+      cache_to:
+        - type=gha,mode=max,scope=gcc-static-build-x86
+    image: gcc-static-build-x86
+    platform: linux/386
+    volumes:
+      - ./bins/x86:/output
+    networks:
+      - gcc_default
+
+  gcc-static-build-arm64:
+    container_name: gcc-static-build-arm64-${GCC_VERSION:-16}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GCC_VERSION: ${GCC_VERSION:-16}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+        TARGETARCH: arm64
+      cache_from:
+        - type=gha,scope=gcc-static-build-arm64
+      cache_to:
+        - type=gha,mode=max,scope=gcc-static-build-arm64
+    image: gcc-static-build-arm64
+    platform: linux/arm64
+    volumes:
+      - ./bins/arm64:/output
+    networks:
+      - gcc_default
+
+  gcc-static-build-arm32:
+    container_name: gcc-static-build-arm32-${GCC_VERSION:-16}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        GCC_VERSION: ${GCC_VERSION:-16}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+        TARGETARCH: arm
+        TARGETVARIANT: v7
+      cache_from:
+        - type=gha,scope=gcc-static-build-arm32
+      cache_to:
+        - type=gha,mode=max,scope=gcc-static-build-arm32
+    image: gcc-static-build-arm32
+    platform: linux/arm/v7
+    volumes:
+      - ./bins/arm32:/output
+    networks:
+      - gcc_default
+
+networks:
+  gcc_default:

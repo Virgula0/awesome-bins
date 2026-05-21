@@ -8,6 +8,7 @@ services:
         OPENSSH_VERSION: ${OPENSSH_VERSION:-10.3p1}
         HOST_UID: ${HOST_UID:-1000}
         HOST_GID: ${HOST_GID:-1000}
+        TARGETARCH: amd64
       cache_from:
         - type=gha,scope=openssh-portable-static-build-x86_64
       cache_to:
@@ -28,6 +29,7 @@ services:
         OPENSSH_VERSION: ${OPENSSH_VERSION:-10.3p1}
         HOST_UID: ${HOST_UID:-1000}
         HOST_GID: ${HOST_GID:-1000}
+        TARGETARCH: 386
       cache_from:
         - type=gha,scope=openssh-portable-static-build-x86
       cache_to:
@@ -48,6 +50,7 @@ services:
         OPENSSH_VERSION: ${OPENSSH_VERSION:-10.3p1}
         HOST_UID: ${HOST_UID:-1000}
         HOST_GID: ${HOST_GID:-1000}
+        TARGETARCH: arm64
       cache_from:
         - type=gha,scope=openssh-portable-static-build-arm64
       cache_to:
@@ -68,6 +71,8 @@ services:
         OPENSSH_VERSION: ${OPENSSH_VERSION:-10.3p1}
         HOST_UID: ${HOST_UID:-1000}
         HOST_GID: ${HOST_GID:-1000}
+        TARGETARCH: arm
+        TARGETVARIANT: v7
       cache_from:
         - type=gha,scope=openssh-portable-static-build-arm32
       cache_to:

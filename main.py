@@ -6,6 +6,7 @@ from netcat_traditional import netcat
 from nmap import nmap
 from openssh_portable import openssh_portable
 from python3 import python3
+from gcc import gcc
 
 # ---------------- END MODULES IMPORTING ------------------
 from src.docker_custom import CustomClient
@@ -143,6 +144,7 @@ if __name__ == "__main__":
         "tcpdump": tcpdump.Tcpdump,
         "openssh_portable": openssh_portable.Openssh_portable,
         "python3": python3.Python3,
+        "gcc": gcc.Gcc,
     }
 
     if args.list_modules:
