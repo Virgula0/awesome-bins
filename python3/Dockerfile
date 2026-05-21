@@ -2,7 +2,8 @@ FROM alpine:3.21 AS builder
 ARG PYTHON3_VERSION
 ARG TARGETARCH
 
-RUN apk add --no-cache \
+RUN --mount=type=cache,id=apk-python,target=/var/cache/apk \
+    apk add --no-cache \
     build-base git linux-headers ccache libc6-compat musl-dev \
     openssl-dev openssl-libs-static zlib-dev zlib-static \
     libffi-dev expat-dev expat-static bzip2-dev bzip2-static \
@@ -17,10 +18,9 @@ RUN BRANCH_NAME=$(echo "${PYTHON3_VERSION}" | cut -d. -f1,2) && \
 
 WORKDIR /build/cpython
 
-# Disable test modules that cause link errors
 RUN echo "*disabled*" > Modules/Setup.local && \
     echo "xxlimited" >> Modules/Setup.local && \
-    echo "_testinternalcapi" >> Modules/Setup.local
+   echo "_testinternalcapi" >> Modules/Setup.local
 
 RUN --mount=type=cache,id=ccache-python-${TARGETARCH},target=/root/.ccache \
     export PATH="/usr/lib/ccache/bin:$PATH" && \
@@ -33,9 +33,10 @@ RUN --mount=type=cache,id=ccache-python-${TARGETARCH},target=/root/.ccache \
         CFLAGS="-Os -static" \
         CPPFLAGS="-static" \
         LDFLAGS="-static -no-pie" \
-    && sed -i 's/\*shared\*/\*static\*/g' Modules/Setup.stdlib \
-    && make -j$(nproc) \
-    && make install
+        CC="ccache gcc" && \
+    sed -i 's/\*shared\*/\*static\*/g' Modules/Setup.stdlib && \
+    make -j$(nproc) && \
+    make install
 
 RUN for bin in /opt/python-static/bin/python3.??; do \
         [ -f "$bin" ] || continue; \
