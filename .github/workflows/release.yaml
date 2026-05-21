@@ -25,6 +25,7 @@ jobs:
           - vim
           - tcpdump
           - openssh_portable
+          - python3
         arch:
           - x86_64
           - x86

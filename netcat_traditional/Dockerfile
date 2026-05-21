@@ -1,38 +1,32 @@
 FROM alpine:3.19 AS builder
 
-ARG NMAP_VERSION=7.99SVN
-ARG TARGETARCH
+ARG NETCAT_VERSION=0.7.1
 
 RUN apk add --no-cache \
     build-base \
-    git \
-    linux-headers \
-    autoconf \
-    ccache
+    wget \
+    automake
 
 WORKDIR /build
-RUN git clone --depth=1 https://github.com/nmap/nmap.git
 
-WORKDIR /build/nmap
-
-RUN --mount=type=cache,id=ccache-nmap-${TARGETARCH},target=/root/.ccache \
-    export PATH="/usr/lib/ccache/bin:$PATH" && \
-    export CCACHE_DIR=/root/.ccache && \
-    ./configure \
-        --prefix=/opt/NMAP-static \
+RUN wget https://downloads.sourceforge.net/project/netcat/netcat/${NETCAT_VERSION}/netcat-${NETCAT_VERSION}.tar.gz \
+    && tar xzf netcat-${NETCAT_VERSION}.tar.gz \
+    && cd netcat-${NETCAT_VERSION} \
+    # config.guess bundled with netcat 0.7.1 is from 2003; replace with
+    # current versions from Alpine's automake package for broad arch support
+    && cp "$(automake --print-libdir)/config.guess" . \
+    && cp "$(automake --print-libdir)/config.sub" . \
+    && ./configure \
+        --prefix=/opt/netcat-static \
         CFLAGS='-O2' \
         LDFLAGS='-static -no-pie' \
-    && make -j$(nproc) CC="ccache gcc" \
+    && make \
     && make install \
+    \
     && echo "=== Static binary check ===" \
-    && for bin in /opt/NMAP-static/bin/*; do \
-        [ -f "$bin" ] || continue; \
-        printf "%s: " "$(basename "$bin")"; \
-        file "$bin" | grep -q "statically linked" \
-            && echo "OK (static)" \
-            || { echo "FAILED (not static)"; exit 1; }; \
-       done \
-    && cp -r scripts /opt/NMAP-static/bin/.
+    && file /opt/netcat-static/bin/netcat | grep -q "statically linked" \
+    && echo "OK (static)" \
+    || { echo "FAILED (not static) - $(file /opt/netcat-static/bin/netcat)"; exit 1; }
 
 FROM alpine:3.19
 ARG HOST_UID=1000
@@ -41,7 +35,8 @@ ARG HOST_GID=1000
 RUN addgroup -g "$HOST_GID" ncuser 2>/dev/null || true \
     && adduser -D -u "$HOST_UID" -G ncuser ncuser 2>/dev/null || true
 
-COPY --from=builder /opt/NMAP-static/bin/ /NMAP-bins/
-RUN chmod -R 755 /NMAP-bins/
+COPY --from=builder /opt/netcat-static/bin/ /netcat-bins/
+RUN chmod -R 755 /netcat-bins/
+
 USER ncuser
-CMD ["sh", "-c", "mkdir -p /output && cp -r /NMAP-bins/. /output/ && chmod -R 755 /output"]
+CMD ["sh", "-c", "mkdir -p /output && cp -r /netcat-bins/. /output/ && chmod -R 755 /output"]

@@ -1,0 +1,83 @@
+services:
+  python3-static-build-x86_64:
+    container_name: python3-static-build-x86_64-${PYTHON3_VERSION:-3.16.0}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PYTHON3_VERSION: ${PYTHON3_VERSION:-3.16.0}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=python3-static-build-x86_64
+      cache_to:
+        - type=gha,mode=max,scope=python3-static-build-x86_64
+    image: python3-static-build-x86_64
+    platform: linux/amd64
+    volumes:
+      - ./bins/x86_64:/output
+    networks:
+      - python3_default
+
+  python3-static-build-x86:
+    container_name: python3-static-build-x86-${PYTHON3_VERSION:-3.16.0}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PYTHON3_VERSION: ${PYTHON3_VERSION:-3.16.0}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=python3-static-build-x86
+      cache_to:
+        - type=gha,mode=max,scope=python3-static-build-x86
+    image: python3-static-build-x86
+    platform: linux/386
+    volumes:
+      - ./bins/x86:/output
+    networks:
+      - python3_default
+
+  python3-static-build-arm64:
+    container_name: python3-static-build-arm64-${PYTHON3_VERSION:-3.16.0}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PYTHON3_VERSION: ${PYTHON3_VERSION:-3.16.0}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=python3-static-build-arm64
+      cache_to:
+        - type=gha,mode=max,scope=python3-static-build-arm64
+    image: python3-static-build-arm64
+    platform: linux/arm64
+    volumes:
+      - ./bins/arm64:/output
+    networks:
+      - python3_default
+
+  python3-static-build-arm32:
+    container_name: python3-static-build-arm32-${PYTHON3_VERSION:-3.16.0}
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PYTHON3_VERSION: ${PYTHON3_VERSION:-3.16.0}
+        HOST_UID: ${HOST_UID:-1000}
+        HOST_GID: ${HOST_GID:-1000}
+      cache_from:
+        - type=gha,scope=python3-static-build-arm32
+      cache_to:
+        - type=gha,mode=max,scope=python3-static-build-arm32
+    image: python3-static-build-arm32
+    platform: linux/arm/v7
+    volumes:
+      - ./bins/arm32:/output
+    networks:
+      - python3_default
+
+networks:
+  python3_default:
