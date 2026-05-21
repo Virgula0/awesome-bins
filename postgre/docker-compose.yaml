@@ -8,7 +8,6 @@ services:
         PG_VERSION: ${PG_VERSION:-16.1}
         HOST_UID: ${HOST_UID:-1000}
         HOST_GID: ${HOST_GID:-1000}
-        TARGETARCH: ${TARGETARCH:-x86_64}
       cache_from:
         - type=gha,scope=pg-static-build-x86_64
       cache_to:
@@ -27,7 +26,6 @@ services:
         PG_VERSION: ${PG_VERSION:-16.1}
         HOST_UID: ${HOST_UID:-1000}
         HOST_GID: ${HOST_GID:-1000}
-        TARGETARCH: ${TARGETARCH:-x86}
       cache_from:
         - type=gha,scope=pg-static-build-x86
       cache_to:
@@ -46,7 +44,6 @@ services:
         PG_VERSION: ${PG_VERSION:-16.1}
         HOST_UID: ${HOST_UID:-1000}
         HOST_GID: ${HOST_GID:-1000}
-        TARGETARCH: ${TARGETARCH:-arm64}
       cache_from:
         - type=gha,scope=pg-static-build-arm64
       cache_to:
@@ -65,7 +62,6 @@ services:
         PG_VERSION: ${PG_VERSION:-16.1}
         HOST_UID: ${HOST_UID:-1000}
         HOST_GID: ${HOST_GID:-1000}
-        TARGETARCH: ${TARGETARCH:-arm32}
       cache_from:
         - type=gha,scope=pg-static-build-arm32
       cache_to:
