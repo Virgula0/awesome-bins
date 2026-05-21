@@ -15,7 +15,7 @@ jobs:
   build:
     if: github.event.pull_request.draft != true
     runs-on: ${{ (matrix.arch == 'arm64' || matrix.arch == 'arm32') && 'ubuntu-24.04-arm' || 'ubuntu-latest' }}
-    timeout-minutes: 120
+    timeout-minutes: 360
     strategy:
       fail-fast: true
       matrix:
