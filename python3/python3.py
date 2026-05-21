@@ -115,4 +115,3 @@ class Python3(Module):
         PYTHON3_VERSION=3.16.0 HOST_UID=$(id -u) HOST_GID=$(id -g) docker-compose up python3-static-build-arm32 --build
         """
         return self._build("python3-static-build-arm32")
-
