@@ -1,6 +1,6 @@
 # awesome-bins
 
-Useful static binaries for pentesting or IT stuff updated weekly
+Useful static binaries for pentesting or IT stuff updated weekly for x86_64, x86, ARM64, ARM32
 
 [![Release Action](https://github.com/Virgula0/awesome-bins/actions/workflows/release.yaml/badge.svg)](https://github.com/Virgula0/awesome-bins/actions/workflows/release.yaml)
 [![GitHub Release](https://img.shields.io/github/v/release/Virgula0/awesome-bins)](https://github.com/Virgula0/awesome-bins/releases)
@@ -22,6 +22,8 @@ Only Linux binaries are supported at the moment, maybe in future I'll consider `
 - [NETCAT_TRADITIONAL](./netcat_traditional)
 - [VIM](./vim)
 - [OPENSSH suite](./openssh_portable)
+- [Python3](./python3)
+- [GCC](./gcc)
 
 # PRs
 
@@ -99,6 +101,8 @@ Available modules:
   - vim
   - tcpdump
   - openssh_portable
+  - python3
+  - gcc
 ```
 
 ### Update latest versions
