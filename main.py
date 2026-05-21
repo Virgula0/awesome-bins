@@ -1,9 +1,12 @@
+# ---------------- MODULES IMPORTING ----------------------
 from postgre import postgre
 from tcpdump import tcpdump
 from vim import vim
 from netcat_traditional import netcat
 from nmap import nmap
 from openssh_portable import openssh_portable
+from python3 import python3
+# ---------------- END MODULES IMPORTING ------------------
 from src.docker_custom import CustomClient
 from src.abstract import Module
 import argparse
@@ -138,6 +141,7 @@ if __name__ == "__main__":
         "vim": vim.Vim,
         "tcpdump": tcpdump.Tcpdump,
         "openssh_portable": openssh_portable.Openssh_portable,
+        "python3": python3.Python3,
     }
 
     if args.list_modules:
