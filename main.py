@@ -7,6 +7,7 @@ from nmap import nmap
 from openssh_portable import openssh_portable
 from python3 import python3
 from gcc import gcc
+from tmux import tmux
 
 # ---------------- END MODULES IMPORTING ------------------
 from src.docker_custom import CustomClient
@@ -145,6 +146,7 @@ if __name__ == "__main__":
         "openssh_portable": openssh_portable.Openssh_portable,
         "python3": python3.Python3,
         "gcc": gcc.Gcc,
+        "tmux": tmux.Tmux,
     }
 
     if args.list_modules:
