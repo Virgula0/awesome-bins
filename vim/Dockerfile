@@ -1,4 +1,4 @@
-FROM alpine:3.19 AS builder
+FROM alpine:3.21 AS builder
 
 ARG VIM_VERSION=9.2.0499
 
@@ -56,7 +56,7 @@ RUN wget https://github.com/vim/vim/archive/refs/tags/v${VIM_VERSION}.tar.gz -O 
     || { echo "FAILED (not static) - $(file /opt/vim-static/bin/vim)"; exit 1; }
 
 
-FROM alpine:3.19
+FROM alpine:3.21
 
 ARG HOST_UID=1000
 ARG HOST_GID=1000

@@ -25,6 +25,7 @@ Only Linux binaries are supported at the moment, maybe in future I'll consider `
 - [Python3](./python3)
 - [GCC](./gcc)
 - [TMUX](./tmux)
+- [MariaDB](./mariadb)
 
 # PRs
 
@@ -105,6 +106,7 @@ Available modules:
   - python3
   - gcc
   - tmux
+  - mariadb
 ```
 
 ### Update latest versions

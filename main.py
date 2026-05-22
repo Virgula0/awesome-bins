@@ -8,6 +8,7 @@ from openssh_portable import openssh_portable
 from python3 import python3
 from gcc import gcc
 from tmux import tmux
+from mariadb import mariadb
 
 # ---------------- END MODULES IMPORTING ------------------
 from src.docker_custom import CustomClient
@@ -147,6 +148,7 @@ if __name__ == "__main__":
         "python3": python3.Python3,
         "gcc": gcc.Gcc,
         "tmux": tmux.Tmux,
+        "mariadb": mariadb.Mariadb,
     }
 
     if args.list_modules:
