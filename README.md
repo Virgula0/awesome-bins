@@ -24,6 +24,7 @@ Only Linux binaries are supported at the moment, maybe in future I'll consider `
 - [OPENSSH suite](./openssh_portable)
 - [Python3](./python3)
 - [GCC](./gcc)
+- [TMUX](./tmux)
 
 # PRs
 
@@ -103,6 +104,7 @@ Available modules:
   - openssh_portable
   - python3
   - gcc
+  - tmux
 ```
 
 ### Update latest versions
