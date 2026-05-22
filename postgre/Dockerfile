@@ -1,4 +1,4 @@
-FROM alpine:3.19 AS builder
+FROM alpine:3.21 AS builder
 ARG PG_VERSION=16.1
 ARG TARGETARCH
 
@@ -55,7 +55,7 @@ RUN --mount=type=cache,id=ccache-pg-${TARGETARCH},target=/root/.ccache \
     done
 
 
-FROM alpine:3.19
+FROM alpine:3.21
 ARG HOST_UID=1000
 ARG HOST_GID=1000
 
