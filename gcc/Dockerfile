@@ -10,8 +10,6 @@ RUN --mount=type=cache,id=apk-gcc-${TARGETARCH},target=/var/cache/apk \
     zlib-dev zlib-static musl-dev
 
 WORKDIR /build
-# git cline gives problems with emulator
-# RUN git clone --depth=1 --branch "releases/gcc-${GCC_VERSION}" https://github.com/gcc-mirror/gcc.git
 RUN wget "https://github.com/gcc-mirror/gcc/archive/refs/heads/releases/gcc-${GCC_VERSION}.tar.gz" -O gcc.tar.gz \
     && tar xzf gcc.tar.gz \
     && rm gcc.tar.gz \
@@ -61,6 +59,11 @@ RUN for bin in /opt/gcc-static/bin/gcc /opt/gcc-static/bin/g++ /opt/gcc-static/b
     done && \
     find /opt/gcc-static -type f -executable -exec strip --strip-all {} \;
 
+RUN GCC_TRIPLE=$(/opt/gcc-static/bin/gcc -dumpmachine) && \
+    GCC_VERSION=$(/opt/gcc-static/bin/gcc -dumpversion) && \
+    echo "$GCC_TRIPLE" > /opt/gcc-static/gcc-triple && \
+    echo "$GCC_VERSION" > /opt/gcc-static/gcc-version
+
 FROM alpine:3.21
 ARG HOST_UID=1000
 ARG HOST_GID=1000
@@ -69,6 +72,18 @@ RUN addgroup -g "$HOST_GID" gccuser 2>/dev/null || true && \
     adduser -D -u "$HOST_UID" -G gccuser gccuser 2>/dev/null || true
 
 COPY --from=builder /opt/gcc-static /gcc-static
+
+RUN for tool in gcc g++; do \
+        mv "/gcc-static/bin/$tool" "/gcc-static/bin/$tool.real" && \
+        printf '#!/bin/sh\nSELF_DIR=$(cd "$(dirname "$0")" && pwd)\nINSTALL_ROOT=$(cd "$SELF_DIR/.." && pwd)\nGCC_TRIPLE=$(cat "$INSTALL_ROOT/gcc-triple")\nGCC_VERSION=$(cat "$INSTALL_ROOT/gcc-version")\nexport GCC_EXEC_PREFIX="$INSTALL_ROOT/libexec/gcc/"\nexec "$SELF_DIR/%s.real" "-B$INSTALL_ROOT/lib/gcc/$GCC_TRIPLE/$GCC_VERSION/" "-L$INSTALL_ROOT/lib" "-L$INSTALL_ROOT/lib/gcc/$GCC_TRIPLE/$GCC_VERSION" "-static" "$@"\n' "$tool" > "/gcc-static/bin/$tool" && \
+        chmod 755 "/gcc-static/bin/$tool"; \
+    done && \
+    if [ -f /gcc-static/bin/cpp ]; then \
+        mv /gcc-static/bin/cpp /gcc-static/bin/cpp.real && \
+        printf '#!/bin/sh\nSELF_DIR=$(cd "$(dirname "$0")" && pwd)\nINSTALL_ROOT=$(cd "$SELF_DIR/.." && pwd)\nGCC_TRIPLE=$(cat "$INSTALL_ROOT/gcc-triple")\nGCC_VERSION=$(cat "$INSTALL_ROOT/gcc-version")\nexport GCC_EXEC_PREFIX="$INSTALL_ROOT/libexec/gcc/"\nexec "$SELF_DIR/cpp.real" "-I$INSTALL_ROOT/include" "$@"\n' > /gcc-static/bin/cpp && \
+        chmod 755 /gcc-static/bin/cpp; \
+    fi
+
 USER gccuser
 
-CMD ["sh", "-c", "mkdir -p /output && cp -r /gcc-static/bin/. /output && chmod -R 755 /output"]
+CMD ["sh", "-c", "mkdir -p /output && cp -r /gcc-static/. /output && chmod -R 755 /output"]
