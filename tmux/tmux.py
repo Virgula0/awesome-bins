@@ -2,11 +2,11 @@ from src.abstract import Module
 from src.docker_custom import CustomClient
 from pathlib import Path
 import os
-import re
 import requests as r
 
+
 class Tmux(Module):
-    _url = "https://api.github.com/repos/tmux/tmux/releases/latest" # releases available for tmux
+    _url = "https://api.github.com/repos/tmux/tmux/releases/latest"  # releases available for tmux
     _target_name = "tmux"
     _lts_file = os.path.join(Path(__file__).resolve().parent, "lts_version")
     _stable_file = os.path.join(
@@ -42,7 +42,7 @@ class Tmux(Module):
             data = response.json()
 
             tag = data["tag_name"]
-            version = tag[1:] if tag.startswith('v') else tag
+            version = tag[1:] if tag.startswith("v") else tag
 
             self.logger(f"Latest tmux version: {version}")
 
