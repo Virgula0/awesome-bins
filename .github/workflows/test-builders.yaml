@@ -28,6 +28,7 @@ jobs:
           - openssh_portable
           - python3
           - gcc
+          - tmux
         arch:
           - x86_64
           - x86
