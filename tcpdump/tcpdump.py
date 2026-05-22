@@ -113,24 +113,24 @@ class Tcpdump(Module):
 
     def build_x86_64(self):
         """
-        TCPDUMP_VERSION=tcpdump4.99.6 HOST_UID=$(id -u) HOST_GID=$(id -g) docker-compose up tcpdump-static-build-x86_64 --build
+        TCPDUMP_VERSION=tcpdump-4.99.6 HOST_UID=$(id -u) HOST_GID=$(id -g) docker-compose up tcpdump-static-build-x86_64 --build
         """
         return self._build("tcpdump-static-build-x86_64")
 
     def build_x86(self):
         """
-        TCPDUMP_VERSION=tcpdump4.99.6 HOST_UID=$(id -u) HOST_GID=$(id -g) docker-compose up tcpdump-static-build-x86 --build
+        TCPDUMP_VERSION=tcpdump-4.99.6 HOST_UID=$(id -u) HOST_GID=$(id -g) docker-compose up tcpdump-static-build-x86 --build
         """
         return self._build("tcpdump-static-build-x86")
 
     def build_arm64(self):
         """
-        TCPDUMP_VERSION=tcpdump4.99.6 HOST_UID=$(id -u) HOST_GID=$(id -g) docker-compose up tcpdump-static-build-arm64 --build
+        TCPDUMP_VERSION=tcpdump-4.99.6 HOST_UID=$(id -u) HOST_GID=$(id -g) docker-compose up tcpdump-static-build-arm64 --build
         """
         return self._build("tcpdump-static-build-arm64")
 
     def build_arm32(self):
         """
-        TCPDUMP_VERSION=tcpdump4.99.6 HOST_UID=$(id -u) HOST_GID=$(id -g) docker-compose up tcpdump-static-build-arm32 --build
+        TCPDUMP_VERSION=tcpdump-4.99.6 HOST_UID=$(id -u) HOST_GID=$(id -g) docker-compose up tcpdump-static-build-arm32 --build
         """
         return self._build("tcpdump-static-build-arm32")
