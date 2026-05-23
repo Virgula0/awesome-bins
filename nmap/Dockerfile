@@ -1,4 +1,4 @@
-FROM alpine:3.21 AS builder
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d AS builder
 
 ARG NMAP_VERSION=7.99SVN
 
@@ -33,7 +33,7 @@ RUN git clone --depth=1 https://github.com/nmap/nmap.git \
     && cp -r scripts /opt/NMAP-static/bin/.
 
 
-FROM alpine:3.21
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d
 
 ARG HOST_UID=1000
 ARG HOST_GID=1000

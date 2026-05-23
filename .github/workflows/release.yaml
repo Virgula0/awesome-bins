@@ -36,8 +36,13 @@ jobs:
           - arm32
 
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
           submodules: recursive
@@ -45,16 +50,16 @@ jobs:
       - name: Set up QEMU
         # x86_64 runner needs QEMU for arm arches, and vice-versa.
         # arm64 native runner still needs QEMU for x86/x86_64/arm32.
-        uses: docker/setup-qemu-action@v3
+        uses: docker/setup-qemu-action@c7c53464625b32c7a7e944ae62b3e17d2b600130 # v3.7.0
 
       - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@v3
+        uses: docker/setup-buildx-action@8d2750c68a42422c14e847fe6c8ac0403b4cbd6f # v3.12.0
 
       - name: Clean Bins
         run: make clean-bins
 
       - name: Setup Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@a309ff8b426b58ec0e2a45f0f869d46889d02405 # v6.2.0
         with:
           python-version: '3.x'
           cache: 'pip'
@@ -75,14 +80,14 @@ jobs:
 
       # Artifact name now includes arch to avoid collisions
       - name: Upload bins
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: bins-${{ matrix.module }}-${{ matrix.arch }}
           path: ${{ matrix.module }}/bins/${{ matrix.arch }}/
           retention-days: 1
 
       - name: Upload compiled versions
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02 # v4.6.2
         with:
           name: compiled-versions-${{ matrix.module }}-${{ matrix.arch }}
           path: ${{ matrix.module }}/compiled_versions
@@ -96,8 +101,13 @@ jobs:
       changed: ${{ steps.check_changes.outputs.changed }}
       compiled_content: ${{ steps.compiled_info.outputs.compiled_content }}
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          egress-policy: audit
+
       - name: Download all compiled versions
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: compiled-versions-*
           path: compiled-versions
@@ -138,21 +148,26 @@ jobs:
     runs-on: ubuntu-latest
     if: needs.check-releasable.outputs.changed == 'true'
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
           submodules: recursive
 
       - name: Download all bins
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: bins-*
           path: bins
           merge-multiple: false
 
       - name: Download all compiled versions
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: compiled-versions-*
           path: compiled-versions
@@ -215,7 +230,7 @@ jobs:
           echo "release_tag=$RELEASE_TAG" >> $GITHUB_OUTPUT
 
       - name: Create GitHub Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2.6.2
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           tag_name: ${{ steps.release_version.outputs.release_tag }}
@@ -226,7 +241,7 @@ jobs:
 
       - name: Delete artifacts after release
         if: always()
-        uses: geekyeggo/delete-artifact@v5
+        uses: geekyeggo/delete-artifact@f275313e70c08f6120db482d7a6b98377786765b # v5.1.0
         with:
           name: |
             bins-*
@@ -238,14 +253,19 @@ jobs:
     runs-on: ubuntu-latest
     if: github.event_name == 'schedule'
     steps:
+      - name: Harden the runner (Audit all outbound calls)
+        uses: step-security/harden-runner@ab7a9404c0f3da075243ca237b5fac12c98deaa5 # v2.19.3
+        with:
+          egress-policy: audit
+
       - name: Checkout code
-        uses: actions/checkout@v4
+        uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4.3.1
         with:
           fetch-depth: 0
           submodules: recursive
 
       - name: Download all bins
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093 # v4.3.0
         with:
           pattern: bins-*
           path: bins
@@ -267,7 +287,7 @@ jobs:
         run: echo "today=$(date +%Y-%m-%d)" >> $GITHUB_OUTPUT
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v7
+        uses: peter-evans/create-pull-request@22a9089034f40e5a961c8808d113e2c98fb63676 # v7.0.11
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           commit-message: "chore: weekly release artifacts and lts_version update [skip ci]"

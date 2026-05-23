@@ -1,0 +1,56 @@
+version: 2
+updates:
+  - package-ecosystem: docker
+    directory: /gcc
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /mariadb
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /netcat_traditional
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /nmap
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /openssh_portable
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /postgre
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /python3
+    schedule:
+      interval: daily
+
+  - package-ecosystem: pip
+    directory: /
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tcpdump
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /tmux
+    schedule:
+      interval: daily
+
+  - package-ecosystem: docker
+    directory: /vim
+    schedule:
+      interval: daily

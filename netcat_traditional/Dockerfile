@@ -1,4 +1,4 @@
-FROM alpine:3.21 AS builder
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d AS builder
 
 ARG NETCAT_VERSION=0.7.1
 
@@ -28,7 +28,7 @@ RUN wget https://downloads.sourceforge.net/project/netcat/netcat/${NETCAT_VERSIO
     && echo "OK (static)" \
     || { echo "FAILED (not static) - $(file /opt/netcat-static/bin/netcat)"; exit 1; }
 
-FROM alpine:3.21
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d
 ARG HOST_UID=1000
 ARG HOST_GID=1000
 

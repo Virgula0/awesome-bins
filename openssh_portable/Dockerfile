@@ -1,4 +1,4 @@
-FROM alpine:3.21 AS zlib-builder
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d AS zlib-builder
 ARG ZLIB_VERSION=1.3.2
 ARG TARGETARCH
 
@@ -19,7 +19,7 @@ RUN --mount=type=cache,id=ccache-zlib-${TARGETARCH},target=/root/.ccache \
     make install
 
 
-FROM alpine:3.21 AS openssl-builder
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d AS openssl-builder
 ARG OPENSSL_VERSION=3.4.1
 ARG TARGETARCH
 ARG TARGETVARIANT
@@ -58,7 +58,7 @@ RUN --mount=type=cache,id=ccache-openssl-${TARGETARCH},target=/root/.ccache \
 RUN test -f /opt/openssl-static/lib/libcrypto.a
 
 
-FROM alpine:3.21 AS builder
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d AS builder
 ARG TARGETARCH
 ARG OPENSSH_VERSION
 
@@ -102,7 +102,7 @@ RUN --mount=type=cache,id=ccache-openssh-${TARGETARCH},target=/root/.ccache \
     done
 
 
-FROM alpine:3.21
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d
 ARG HOST_UID=1000
 ARG HOST_GID=1000
 
