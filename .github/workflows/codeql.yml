@@ -25,6 +25,7 @@ permissions:
 
 jobs:
   analyze:
+    if: github.event.pull_request.draft != true
     name: Analyze
     runs-on: ubuntu-latest
     permissions:
