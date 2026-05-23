@@ -1,4 +1,4 @@
-FROM alpine:3.21 AS builder
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d AS builder
 
 ARG TCPDUMP_VERSION
 ARG LIBPCAP_VERSION=1.10.4
@@ -43,7 +43,7 @@ RUN for bin in /opt/tcpdump-static/bin/*; do \
         file "$bin" | grep -q "statically linked" || { echo "Not static: $bin"; exit 1; }; \
     done
 
-FROM alpine:3.21
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d
 
 ARG HOST_UID=1000
 ARG HOST_GID=1000

@@ -1,4 +1,4 @@
-FROM alpine:3.21 AS builder
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d AS builder
 ARG GCC_VERSION
 ARG TARGETARCH
 ARG TARGETVARIANT
@@ -64,7 +64,7 @@ RUN GCC_TRIPLE=$(/opt/gcc-static/bin/gcc -dumpmachine) && \
     echo "$GCC_TRIPLE" > /opt/gcc-static/gcc-triple && \
     echo "$GCC_VERSION" > /opt/gcc-static/gcc-version
 
-FROM alpine:3.21
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d
 ARG HOST_UID=1000
 ARG HOST_GID=1000
 

@@ -1,4 +1,4 @@
-FROM alpine:3.21 AS builder
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d AS builder
 ARG MARIADB_VERSION=12.2.2
 ARG TARGETARCH
 
@@ -91,7 +91,7 @@ RUN echo "=== Static binary check ===" && \
             || { echo "FAILED (not static) - $(file /opt/mariadb-static/bin/$bin)"; exit 1; }; \
     done
 
-FROM alpine:3.21
+FROM alpine:3.21@sha256:48b0309ca019d89d40f670aa1bc06e426dc0931948452e8491e3d65087abc07d
 ARG HOST_UID=1000
 ARG HOST_GID=1000
 
